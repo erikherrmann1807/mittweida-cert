@@ -205,3 +205,10 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# --- Streamlit ---
+# Ignore everything in the .streamlit folder
+.streamlit/*
+
+# Ignore everything in the .vscode folder
+.vscode/*
