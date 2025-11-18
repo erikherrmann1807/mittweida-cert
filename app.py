@@ -8,6 +8,9 @@ import sqlite3
 import ssl
 import string
 import time
+
+import pandas as pd
+import psycopg2
 from email.message import EmailMessage
 from pathlib import Path
 from typing import Optional
@@ -16,15 +19,15 @@ import streamlit as st
 from PIL import Image
 
 # ==========================================
-# ---------- OTP / SMTP KONFIG ----------
+# ---------- OTP / SMTP CONFIG ----------
 # ==========================================
-CFG = st.secrets.get("email_otp", {})
-SMTP_HOST = CFG.get("host")
-SMTP_PORT = int(CFG.get("port", 587))
-SMTP_USER = CFG.get("user", "")
-SMTP_PASS = CFG.get("password", "")
-SMTP_FROM = CFG.get("from", SMTP_USER)
-USE_STARTTLS = bool(CFG.get("use_starttls", True))
+SMTP_CFG = st.secrets.get("email_otp", {})
+SMTP_HOST = SMTP_CFG.get("host")
+SMTP_PORT = int(SMTP_CFG.get("port", 587))
+SMTP_USER = SMTP_CFG.get("user", "")
+SMTP_PASS = SMTP_CFG.get("password", "")
+SMTP_FROM = SMTP_CFG.get("from", SMTP_USER)
+USE_STARTTLS = bool(SMTP_CFG.get("use_starttls", True))
 
 # ---------- OTP-Parameter ----------
 CODE_LEN = 6
@@ -35,19 +38,108 @@ DB_PATH = Path("otp.db")
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 # ----------- Admin E-Mail(s) -----------
-ADMIN_CFG = st.secrets.get("admin_email", {})
+ADMIN_CFG = st.secrets.get("admin_mail", {})
 ADMIN_EMAIL = ADMIN_CFG.get("admin_mail")
+
+# ==========================================
+# ---------- Database CONFIG ----------
+# ==========================================
+DATABASE_CFG = st.secrets.get("database", {})
+DB = DATABASE_CFG.get("database", "mwcertlocal")
+DB_USER = DATABASE_CFG.get("user", "postgres")
+DB_HOST = DATABASE_CFG.get("host", "localhost")
+DB_PASSWORD = DATABASE_CFG.get("password", "mwcertlocal")
+DB_PORT = DATABASE_CFG.get("port", "5430")
+
+
+# ==========================================
+# ---------- DB-Layer (PostgresSQL) ----------
+# ==========================================
+
+# ---------- Debug Methods ----------
+def show_data():
+    with postgres() as con:
+        with con.cursor() as cur:
+            cur.execute("SELECT id FROM users WHERE main_email = 'erik@example.de'")
+            row = cur.fetchone()
+            print("User Id:")
+            for user in row:
+                print(user)
+
+            user_id = row[0]
+            cur.execute("SELECT * FROM certificates WHERE user_id = %s", (user_id,))
+            certificates = cur.fetchall()
+            print("\nCertificates:")
+            for cert in certificates:
+                print(cert)
+
+
+def delete_data():
+    with postgres() as con:
+        with con.cursor() as cur:
+            cur.execute("DELETE FROM certificates")
+            cur.execute("DELETE FROM users")
+
+        con.commit()
+
+
+def postgres():
+    return psycopg2.connect(database=DB,
+                            user=DB_USER,
+                            host=DB_HOST,
+                            password=DB_PASSWORD,
+                            port=DB_PORT)
+
+
+def get_or_create_user_id(cur, main_email, alias_email):
+    cur.execute(
+        "SELECT id FROM users WHERE main_email = %s",
+        (main_email,)
+    )
+    row = cur.fetchone()
+
+    if row:
+        return row[0]
+
+    cur.execute(
+        """
+        INSERT INTO users (main_email, alias_email, created_at)
+        VALUES (%s, %s, NOW())
+        RETURNING id;
+        """,
+        (main_email, alias_email)
+    )
+    return cur.fetchone()[0]
+
+
+def insert_csv(path_to_csv):
+    with postgres() as con:
+        with con.cursor() as cur:
+            df = pd.read_csv(path_to_csv[0], delimiter=',')
+            for _, row in df.iterrows():
+                name = row['name']
+                email = row['email']
+                course_name = row['course_name']
+                user_id = get_or_create_user_id(cur, email, None)
+
+                cur.execute(
+                    """
+                    INSERT INTO certificates (name, email, course_name, created_at, user_id) 
+                    VALUES (%s, %s, %s, NOW(), %s)
+                    """,
+                    (name, email, course_name, user_id)
+                )
 
 
 # ==========================================
 # ---------- DB-Layer (SQLite) ----------
 # ==========================================
-def db():
+def sqlitedb():
     return sqlite3.connect(DB_PATH)
 
 
-def init_db():
-    with db() as con:
+def init_sqlitedb():
+    with sqlitedb() as con:
         con.execute("""
         CREATE TABLE IF NOT EXISTS email_otps (
             email TEXT PRIMARY KEY,
@@ -62,7 +154,7 @@ def init_db():
 
 
 def save_otp(email: str, code_hash: str, now_ts: int, exp_ts: int):
-    with db() as con:
+    with sqlitedb() as con:
         con.execute("""
         INSERT INTO email_otps(email, code_hash, created_at, expires_at, attempts, last_sent_at)
         VALUES (?, ?, ?, ?, 0, ?)
@@ -77,7 +169,7 @@ def save_otp(email: str, code_hash: str, now_ts: int, exp_ts: int):
 
 
 def load_otp(email: str) -> Optional[dict]:
-    with db() as con:
+    with sqlitedb() as con:
         cur = con.execute(
             "SELECT code_hash, created_at, expires_at, attempts, last_sent_at FROM email_otps WHERE email = ?",
             (email,))
@@ -88,13 +180,13 @@ def load_otp(email: str) -> Optional[dict]:
 
 
 def inc_attempt(email: str):
-    with db() as con:
+    with sqlitedb() as con:
         con.execute("UPDATE email_otps SET attempts = attempts + 1 WHERE email = ?", (email,))
         con.commit()
 
 
 def delete_otp(email: str):
-    with db() as con:
+    with sqlitedb() as con:
         con.execute("DELETE FROM email_otps WHERE email = ?", (email,))
         con.commit()
 
@@ -162,7 +254,7 @@ def request_login_code(email: str) -> str:
     email = email.strip().lower()
     if not EMAIL_RE.match(email):
         return "Ungültige E-Mail-Adresse."
-    init_db()
+    init_sqlitedb()
     now = int(time.time())
     row = load_otp(email)
     if row and now - row["last_sent_at"] < RESEND_COOLDOWN:
@@ -177,7 +269,7 @@ def request_login_code(email: str) -> str:
 
 def verify_login_code(email: str, code: str) -> bool:
     email = email.strip().lower()
-    init_db()
+    init_sqlitedb()
     row = load_otp(email)
     if not row:
         return False
@@ -211,7 +303,7 @@ if not st.session_state.auth_email and not st.session_state.admin_authenticated:
     with st.container(border=True):
         st.subheader("🔐 Anmeldung")
         email_req = st.text_input("E-Mail", placeholder="john@example.de")
-        if email_req.strip().lower() == ADMIN_EMAIL:
+        if email_req.strip().lower() == ADMIN_EMAIL.strip().lower():
             st.session_state.admin_authenticated = True
             st.rerun()
         if st.button("Code senden", use_container_width=True):
@@ -315,12 +407,12 @@ def user_content():
 
 def admin_content():
     st.markdown(f"<h1 class='no-fade'>Admin Dashboard</h1>", unsafe_allow_html=True)
-    with  st.container(border=True):
+    with st.container(border=True):
         st.markdown("## Zertifikate hochladen")
         uploaded_file = st.file_uploader("CSV-Datei mit Zertifikatsdaten hochladen", type=["csv"],
                                          accept_multiple_files=True)
         if uploaded_file:
-            # TODO: Datei verarbeiten und in Datenbank speichern
+            insert_csv(uploaded_file)
             st.success("Datei erfolgreich hochgeladen!")
 
 
