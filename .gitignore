@@ -212,3 +212,6 @@ __marimo__/
 
 # Ignore everything in the .vscode folder
 .vscode/*
+
+# idea folder, uncomment if you don't need it
+ .idea
