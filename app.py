@@ -91,6 +91,31 @@ def postgres():
                             port=DB_PORT)
 
 
+def set_alias_email(main_email: str, alias_email: str):
+    with postgres() as con:
+        with con.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE users SET alias_email = %s WHERE main_email = %s
+                """,
+                (alias_email, main_email)
+            )
+
+
+def check_existing_user(email: str):
+    with postgres() as con:
+        with con.cursor() as cur:
+            cur.execute(
+                """
+                SELECT 1 FROM users WHERE main_email = %s OR alias_email = %s
+                """,
+                (email, email)
+            )
+            user = cur.fetchone()
+            if user:
+                return True
+        return False
+
 def get_or_create_user_id(cur, main_email, alias_email):
     cur.execute(
         "SELECT id FROM users WHERE main_email = %s",
@@ -112,10 +137,10 @@ def get_or_create_user_id(cur, main_email, alias_email):
     return cur.fetchone()[0]
 
 
-def insert_csv(path_to_csv):
+def insert_csv(csv_file):
     with postgres() as con:
         with con.cursor() as cur:
-            df = pd.read_csv(path_to_csv[0], delimiter=',')
+            df = pd.read_csv(csv_file[0], sep=';')
             for _, row in df.iterrows():
                 name = row['name']
                 email = row['email']
@@ -298,6 +323,9 @@ if "admin_authenticated" not in st.session_state:
 if "auth_email" not in st.session_state:
     st.session_state.auth_email = None
 
+if "user_exists" not in st.session_state:
+    st.session_state.user_exists = False
+
 # --- Login-Gate ---
 if not st.session_state.auth_email and not st.session_state.admin_authenticated:
     with st.container(border=True):
@@ -307,11 +335,15 @@ if not st.session_state.auth_email and not st.session_state.admin_authenticated:
             st.session_state.admin_authenticated = True
             st.rerun()
         if st.button("Code senden", use_container_width=True):
-            try:
-                msg = request_login_code(email_req)
-                st.success(msg)
-            except Exception as e:
-                st.error(f"Versand fehlgeschlagen: {e}")
+            st.session_state.user_exists = check_existing_user(email=email_req)
+            if st.session_state.user_exists:
+                try:
+                    msg = request_login_code(email_req)
+                    st.success(msg)
+                except Exception as e:
+                    st.error(f"Versand fehlgeschlagen: {e}")
+            else:
+                st.error("Kein Nutzer mit dieser Email gefunden.")
         code_input = st.text_input("Anmeldecode", placeholder="6-stelliger Code")
         if st.button("Anmelden", use_container_width=True):
             if verify_login_code(email_req, code_input):
@@ -343,6 +375,7 @@ def user_content():
                                                 help="Hier können Sie eine alternative E-Mail-Adresse hinterlegen, welche Ihnen Zugriff auf Ihre Zertifikate ermöglicht.")
                 if alternate_email:
                     # TODO: Alternative E-Mail in DB speichern
+                    set_alias_email(main_email=st.session_state.auth_email, alias_email=alternate_email)
                     st.success(f"Alternative E-Mail '{alternate_email}' hinterlegt.")
             try:
                 qr_image = Image.open(os.path.join('resources', 'qrcode.png'))
