@@ -8,6 +8,9 @@ import sqlite3
 import ssl
 import string
 import time
+
+import pandas as pd
+import psycopg2
 from email.message import EmailMessage
 from pathlib import Path
 from typing import Optional
@@ -16,15 +19,15 @@ import streamlit as st
 from PIL import Image
 
 # ==========================================
-# ---------- OTP / SMTP KONFIG ----------
+# ---------- OTP / SMTP CONFIG ----------
 # ==========================================
-CFG = st.secrets.get("email_otp", {})
-SMTP_HOST = CFG.get("host")
-SMTP_PORT = int(CFG.get("port", 587))
-SMTP_USER = CFG.get("user", "")
-SMTP_PASS = CFG.get("password", "")
-SMTP_FROM = CFG.get("from", SMTP_USER)
-USE_STARTTLS = bool(CFG.get("use_starttls", True))
+SMTP_CFG = st.secrets.get("email_otp", {})
+SMTP_HOST = SMTP_CFG.get("host")
+SMTP_PORT = int(SMTP_CFG.get("port", 587))
+SMTP_USER = SMTP_CFG.get("user", "")
+SMTP_PASS = SMTP_CFG.get("password", "")
+SMTP_FROM = SMTP_CFG.get("from", SMTP_USER)
+USE_STARTTLS = bool(SMTP_CFG.get("use_starttls", True))
 
 # ---------- OTP-Parameter ----------
 CODE_LEN = 6
@@ -35,19 +38,154 @@ DB_PATH = Path("otp.db")
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 # ----------- Admin E-Mail(s) -----------
-ADMIN_CFG = st.secrets.get("admin_email", {})
+ADMIN_CFG = st.secrets.get("admin_mail", {})
 ADMIN_EMAIL = ADMIN_CFG.get("admin_mail")
 
+# ==========================================
+# ---------- Database CONFIG ----------
+# ==========================================
+DATABASE_CFG = st.secrets.get("database", {})
+DB = DATABASE_CFG.get("database", "mwcertlocal")
+DB_USER = DATABASE_CFG.get("user", "postgres")
+DB_HOST = DATABASE_CFG.get("host", "localhost")
+DB_PASSWORD = DATABASE_CFG.get("password", "mwcertlocal")
+DB_PORT = DATABASE_CFG.get("port", "5430")
+
+
+# ==========================================
+# ---------- DB-Layer (PostgresSQL) ----------
+# ==========================================
+
+# ---------- Debug Methods ----------
+def show_data():
+    with postgres() as con:
+        with con.cursor() as cur:
+            cur.execute("SELECT id FROM users WHERE main_email = 'erik@example.de'")
+            row = cur.fetchone()
+            print("User Id:")
+            for user in row:
+                print(user)
+
+            user_id = row[0]
+            cur.execute("SELECT * FROM certificates WHERE user_id = %s", (user_id,))
+            certificates = cur.fetchall()
+            print("\nCertificates:")
+            for cert in certificates:
+                print(cert)
+
+
+def delete_data():
+    with postgres() as con:
+        with con.cursor() as cur:
+            cur.execute("DELETE FROM certificates")
+            cur.execute("DELETE FROM users")
+
+        con.commit()
+
+
+def postgres():
+    return psycopg2.connect(database=DB,
+                            user=DB_USER,
+                            host=DB_HOST,
+                            password=DB_PASSWORD,
+                            port=DB_PORT)
+
+
+def set_alias_email(main_email: str, alias_email: str):
+    with postgres() as con:
+        with con.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE users SET alias_email = %s WHERE main_email = %s
+                """,
+                (alias_email, main_email)
+            )
+
+
+def check_existing_user(email: str):
+    with postgres() as con:
+        with con.cursor() as cur:
+            cur.execute(
+                """
+                SELECT 1 FROM users WHERE main_email = %s OR alias_email = %s
+                """,
+                (email, email)
+            )
+            user = cur.fetchone()
+            if user:
+                return True
+        return False
+
+def get_or_create_user_id(cur, main_email, alias_email):
+    cur.execute(
+        "SELECT id FROM users WHERE main_email = %s",
+        (main_email,)
+    )
+    row = cur.fetchone()
+
+    if row:
+        return row[0]
+
+    cur.execute(
+        """
+        INSERT INTO users (main_email, alias_email, created_at)
+        VALUES (%s, %s, NOW())
+        RETURNING id;
+        """,
+        (main_email, alias_email)
+    )
+    return cur.fetchone()[0]
+
+
+def get_user(cur, email: str):
+    cur.execute(
+        "SELECT id FROM users WHERE main_email = %s OR alias_email = %s",
+        (email, email)
+    )
+    return cur.fetchone()[0]
+
+
+def insert_csv(csv_file):
+    with postgres() as con:
+        with con.cursor() as cur:
+            df = pd.read_csv(csv_file[0], sep=';')
+            for _, row in df.iterrows():
+                name = row['name']
+                email = row['email']
+                course_name = row['course_name']
+                user_id = get_or_create_user_id(cur, email, None)
+
+                cur.execute(
+                    """
+                    INSERT INTO certificates (name, email, course_name, created_at, user_id) 
+                    VALUES (%s, %s, %s, NOW(), %s)
+                    """,
+                    (name, email, course_name, user_id)
+                )
+
+
+def get_data_per_user(email: str):
+    with postgres() as con:
+        with con.cursor() as cur:
+
+            user_id = get_user(cur, email)
+
+            cur.execute("""
+            SELECT * FROM certificates WHERE user_id = %s
+            """,
+            (user_id,)
+            )
+            return cur.fetchall()
 
 # ==========================================
 # ---------- DB-Layer (SQLite) ----------
 # ==========================================
-def db():
+def sqlitedb():
     return sqlite3.connect(DB_PATH)
 
 
-def init_db():
-    with db() as con:
+def init_sqlitedb():
+    with sqlitedb() as con:
         con.execute("""
         CREATE TABLE IF NOT EXISTS email_otps (
             email TEXT PRIMARY KEY,
@@ -62,7 +200,7 @@ def init_db():
 
 
 def save_otp(email: str, code_hash: str, now_ts: int, exp_ts: int):
-    with db() as con:
+    with sqlitedb() as con:
         con.execute("""
         INSERT INTO email_otps(email, code_hash, created_at, expires_at, attempts, last_sent_at)
         VALUES (?, ?, ?, ?, 0, ?)
@@ -77,7 +215,7 @@ def save_otp(email: str, code_hash: str, now_ts: int, exp_ts: int):
 
 
 def load_otp(email: str) -> Optional[dict]:
-    with db() as con:
+    with sqlitedb() as con:
         cur = con.execute(
             "SELECT code_hash, created_at, expires_at, attempts, last_sent_at FROM email_otps WHERE email = ?",
             (email,))
@@ -88,13 +226,13 @@ def load_otp(email: str) -> Optional[dict]:
 
 
 def inc_attempt(email: str):
-    with db() as con:
+    with sqlitedb() as con:
         con.execute("UPDATE email_otps SET attempts = attempts + 1 WHERE email = ?", (email,))
         con.commit()
 
 
 def delete_otp(email: str):
-    with db() as con:
+    with sqlitedb() as con:
         con.execute("DELETE FROM email_otps WHERE email = ?", (email,))
         con.commit()
 
@@ -162,7 +300,7 @@ def request_login_code(email: str) -> str:
     email = email.strip().lower()
     if not EMAIL_RE.match(email):
         return "Ungültige E-Mail-Adresse."
-    init_db()
+    init_sqlitedb()
     now = int(time.time())
     row = load_otp(email)
     if row and now - row["last_sent_at"] < RESEND_COOLDOWN:
@@ -177,7 +315,7 @@ def request_login_code(email: str) -> str:
 
 def verify_login_code(email: str, code: str) -> bool:
     email = email.strip().lower()
-    init_db()
+    init_sqlitedb()
     row = load_otp(email)
     if not row:
         return False
@@ -206,20 +344,27 @@ if "admin_authenticated" not in st.session_state:
 if "auth_email" not in st.session_state:
     st.session_state.auth_email = None
 
+if "user_exists" not in st.session_state:
+    st.session_state.user_exists = False
+
 # --- Login-Gate ---
 if not st.session_state.auth_email and not st.session_state.admin_authenticated:
     with st.container(border=True):
         st.subheader("🔐 Anmeldung")
         email_req = st.text_input("E-Mail", placeholder="john@example.de")
-        if email_req.strip().lower() == ADMIN_EMAIL:
+        if email_req.strip().lower() == ADMIN_EMAIL.strip().lower():
             st.session_state.admin_authenticated = True
             st.rerun()
         if st.button("Code senden", use_container_width=True):
-            try:
-                msg = request_login_code(email_req)
-                st.success(msg)
-            except Exception as e:
-                st.error(f"Versand fehlgeschlagen: {e}")
+            st.session_state.user_exists = check_existing_user(email=email_req)
+            if st.session_state.user_exists:
+                try:
+                    msg = request_login_code(email_req)
+                    st.success(msg)
+                except Exception as e:
+                    st.error(f"Versand fehlgeschlagen: {e}")
+            else:
+                st.error("Kein Nutzer mit dieser Email gefunden.")
         code_input = st.text_input("Anmeldecode", placeholder="6-stelliger Code")
         if st.button("Anmelden", use_container_width=True):
             if verify_login_code(email_req, code_input):
@@ -250,7 +395,7 @@ def user_content():
                 alternate_email = st.text_input("Alternative E-Mail hinterlegen", value="", key="alternative_email",
                                                 help="Hier können Sie eine alternative E-Mail-Adresse hinterlegen, welche Ihnen Zugriff auf Ihre Zertifikate ermöglicht.")
                 if alternate_email:
-                    # TODO: Alternative E-Mail in DB speichern
+                    set_alias_email(main_email=st.session_state.auth_email, alias_email=alternate_email)
                     st.success(f"Alternative E-Mail '{alternate_email}' hinterlegt.")
             try:
                 qr_image = Image.open(os.path.join('resources', 'qrcode.png'))
@@ -272,41 +417,38 @@ def user_content():
                 selected_platform = st.selectbox("Plattform", ["Alle", "Moodle", "Opal", "Andere"])
 
             certs_per_row = 2
-            certs = [
-                {"title": "Datenbanken 101", "platform": "Moodle", "year": "2023"},
-                {"title": "Einführung in Python", "platform": "Opal", "year": "2022"},
-                {"title": "Webentwicklung Basics", "platform": "Andere", "year": "2021"},
-                {"title": "Maschinelles Lernen", "platform": "Moodle", "year": "2024"},
-                {"title": "Netzwerktechnik", "platform": "Opal", "year": "2020"},
-            ]
-            filtered_certs = [c for c in certs if
-                              (selected_year == "Alle" or c["year"] == selected_year) and
-                              (selected_platform == "Alle" or c["platform"] == selected_platform) and
-                              (search_query.lower() in c["title"].lower() if search_query else True)]
-            rows = [filtered_certs[i:i + certs_per_row] for i in range(0, len(filtered_certs), certs_per_row)]
+            certs = get_data_per_user(st.session_state.auth_email)
+            # filtered_certs = [c for c in certs if
+            #                   (selected_year == "Alle" or c["year"] == selected_year) and
+            #                   (selected_platform == "Alle" or c["platform"] == selected_platform) and
+            #                   (search_query.lower() in c["title"].lower() if search_query else True)]
+            rows = [certs[i:i + certs_per_row] for i in range(0, len(certs), certs_per_row)]
             with st.container(height=550, border=False):
                 for row in rows:
                     cert_columns = st.columns(certs_per_row)
                     for idx, cert in enumerate(row):
                         with cert_columns[idx]:
                             with st.container(border=True, height=250, vertical_alignment="distribute"):
-                                st.markdown(f"#### {cert['title']}")
-                                st.markdown(f"**Plattform:** {cert['platform']}")
-                                st.markdown(f"**Jahr:** {cert['year']}")
-                                if st.button("Zertifikat ansehen", key=f"download_{cert['title']}",
+                                print(rows)
+                                cert_id, name, email, course_name, created_at, user_id = cert
+                                st.markdown(f"#### {course_name}")
+                                st.markdown(f"**Plattform:** ")
+                                st.markdown(f"**Jahr:** {created_at}")
+                                if st.button("Zertifikat ansehen", key=f"download_{course_name}",
                                              use_container_width=True):
-                                    st.session_state['show_cert_details'] = cert['title']
+                                    st.session_state['show_cert_details'] = course_name
 
         if 'show_cert_details' in st.session_state:
             cert_title = st.session_state['show_cert_details']
-            cert_info = next((c for c in certs if c['title'] == cert_title), None)
+            cert_info = next((c for c in certs if c[3] == cert_title), None)
+            cert_id, name, email, course_name, created_at, user_id = cert_info
             if cert_info:
                 with st.container(border=True):
                     left, right = st.columns([2, 1])
                     with left:
-                        st.markdown(f"<h4>{cert_info['title']}</h4>", unsafe_allow_html=True)
-                        st.markdown(f"**Plattform:** {cert_info['platform']}")
-                        st.markdown(f"**Jahr:** {cert_info['year']}")
+                        st.markdown(f"<h4>{course_name}</h4>", unsafe_allow_html=True)
+                        st.markdown(f"**Plattform:** ")
+                        st.markdown(f"**Jahr:** {created_at}")
                     with right:
                         st.image("https://placehold.co/200x120?text=Zertifikat", caption="Vorschau",
                                  use_container_width=True)
@@ -315,12 +457,12 @@ def user_content():
 
 def admin_content():
     st.markdown(f"<h1 class='no-fade'>Admin Dashboard</h1>", unsafe_allow_html=True)
-    with  st.container(border=True):
+    with st.container(border=True):
         st.markdown("## Zertifikate hochladen")
         uploaded_file = st.file_uploader("CSV-Datei mit Zertifikatsdaten hochladen", type=["csv"],
                                          accept_multiple_files=True)
         if uploaded_file:
-            # TODO: Datei verarbeiten und in Datenbank speichern
+            insert_csv(uploaded_file)
             st.success("Datei erfolgreich hochgeladen!")
 
 
