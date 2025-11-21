@@ -137,6 +137,14 @@ def get_or_create_user_id(cur, main_email, alias_email):
     return cur.fetchone()[0]
 
 
+def get_user(cur, email: str):
+    cur.execute(
+        "SELECT id FROM users WHERE main_email = %s OR alias_email = %s",
+        (email, email)
+    )
+    return cur.fetchone()[0]
+
+
 def insert_csv(csv_file):
     with postgres() as con:
         with con.cursor() as cur:
@@ -155,6 +163,19 @@ def insert_csv(csv_file):
                     (name, email, course_name, user_id)
                 )
 
+
+def get_data_per_user(email: str):
+    with postgres() as con:
+        with con.cursor() as cur:
+
+            user_id = get_user(cur, email)
+
+            cur.execute("""
+            SELECT * FROM certificates WHERE user_id = %s
+            """,
+            (user_id,)
+            )
+            return cur.fetchall()
 
 # ==========================================
 # ---------- DB-Layer (SQLite) ----------
@@ -374,7 +395,6 @@ def user_content():
                 alternate_email = st.text_input("Alternative E-Mail hinterlegen", value="", key="alternative_email",
                                                 help="Hier können Sie eine alternative E-Mail-Adresse hinterlegen, welche Ihnen Zugriff auf Ihre Zertifikate ermöglicht.")
                 if alternate_email:
-                    # TODO: Alternative E-Mail in DB speichern
                     set_alias_email(main_email=st.session_state.auth_email, alias_email=alternate_email)
                     st.success(f"Alternative E-Mail '{alternate_email}' hinterlegt.")
             try:
@@ -397,41 +417,38 @@ def user_content():
                 selected_platform = st.selectbox("Plattform", ["Alle", "Moodle", "Opal", "Andere"])
 
             certs_per_row = 2
-            certs = [
-                {"title": "Datenbanken 101", "platform": "Moodle", "year": "2023"},
-                {"title": "Einführung in Python", "platform": "Opal", "year": "2022"},
-                {"title": "Webentwicklung Basics", "platform": "Andere", "year": "2021"},
-                {"title": "Maschinelles Lernen", "platform": "Moodle", "year": "2024"},
-                {"title": "Netzwerktechnik", "platform": "Opal", "year": "2020"},
-            ]
-            filtered_certs = [c for c in certs if
-                              (selected_year == "Alle" or c["year"] == selected_year) and
-                              (selected_platform == "Alle" or c["platform"] == selected_platform) and
-                              (search_query.lower() in c["title"].lower() if search_query else True)]
-            rows = [filtered_certs[i:i + certs_per_row] for i in range(0, len(filtered_certs), certs_per_row)]
+            certs = get_data_per_user(st.session_state.auth_email)
+            # filtered_certs = [c for c in certs if
+            #                   (selected_year == "Alle" or c["year"] == selected_year) and
+            #                   (selected_platform == "Alle" or c["platform"] == selected_platform) and
+            #                   (search_query.lower() in c["title"].lower() if search_query else True)]
+            rows = [certs[i:i + certs_per_row] for i in range(0, len(certs), certs_per_row)]
             with st.container(height=550, border=False):
                 for row in rows:
                     cert_columns = st.columns(certs_per_row)
                     for idx, cert in enumerate(row):
                         with cert_columns[idx]:
                             with st.container(border=True, height=250, vertical_alignment="distribute"):
-                                st.markdown(f"#### {cert['title']}")
-                                st.markdown(f"**Plattform:** {cert['platform']}")
-                                st.markdown(f"**Jahr:** {cert['year']}")
-                                if st.button("Zertifikat ansehen", key=f"download_{cert['title']}",
+                                print(rows)
+                                cert_id, name, email, course_name, created_at, user_id = cert
+                                st.markdown(f"#### {course_name}")
+                                st.markdown(f"**Plattform:** ")
+                                st.markdown(f"**Jahr:** {created_at}")
+                                if st.button("Zertifikat ansehen", key=f"download_{course_name}",
                                              use_container_width=True):
-                                    st.session_state['show_cert_details'] = cert['title']
+                                    st.session_state['show_cert_details'] = course_name
 
         if 'show_cert_details' in st.session_state:
             cert_title = st.session_state['show_cert_details']
-            cert_info = next((c for c in certs if c['title'] == cert_title), None)
+            cert_info = next((c for c in certs if c[3] == cert_title), None)
+            cert_id, name, email, course_name, created_at, user_id = cert_info
             if cert_info:
                 with st.container(border=True):
                     left, right = st.columns([2, 1])
                     with left:
-                        st.markdown(f"<h4>{cert_info['title']}</h4>", unsafe_allow_html=True)
-                        st.markdown(f"**Plattform:** {cert_info['platform']}")
-                        st.markdown(f"**Jahr:** {cert_info['year']}")
+                        st.markdown(f"<h4>{course_name}</h4>", unsafe_allow_html=True)
+                        st.markdown(f"**Plattform:** ")
+                        st.markdown(f"**Jahr:** {created_at}")
                     with right:
                         st.image("https://placehold.co/200x120?text=Zertifikat", caption="Vorschau",
                                  use_container_width=True)
