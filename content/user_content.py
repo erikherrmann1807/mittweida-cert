@@ -1,4 +1,5 @@
 import os
+import time
 
 import streamlit as st
 from PIL import Image
@@ -63,11 +64,15 @@ def user_content():
                                 date =  format_date(created_at, locale='de_DE')
                                 st.markdown(f"#### {course_name}")
                                 st.markdown(f"**Name: {name}**")
-                                st.markdown(f"**Plattform: {platform}** ")
+                                st.markdown(f"**Plattform: {platform}**")
                                 st.markdown(f"**Datum:** {date}")
-                                if st.button("Zertifikat herunterladen", key=f"download_{course_name}", use_container_width=True):
+                                if st.button("Zertifikat generieren", key=f"download_{course_name}", use_container_width=True):
                                     download_dialog(title=course_name)
 
-@st.dialog("Download erfolgreich")
+@st.dialog("Zertifikat herunterladen")
 def download_dialog(title: str):
-    st.write(f" Zertifikat für {title} wird heruntergeladen")
+    #TODO: Generate pdf from template
+    with st.spinner('Generating ...'):
+        time.sleep(5)
+        st.write(f"Sie können Ihr Zertifikat für '{title}' nun herunterladen.")
+        st.download_button("PDF herunterladen", data="")
