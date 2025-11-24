@@ -65,14 +65,15 @@ def insert_csv(csv_file):
                 name = row['name']
                 email = row['email']
                 course_name = row['course_name']
+                platform = row['platform']
+                cert_number = row['cert_number']
                 user_id = get_or_create_user_id(cur, email, None)
-
                 cur.execute(
                     """
-                    INSERT INTO certificates (name, email, course_name, created_at, user_id) 
-                    VALUES (%s, %s, %s, NOW(), %s)
+                    INSERT INTO certificates (name, email, course_name, platform, created_at, cert_number, user_id) 
+                    VALUES (%s, %s, %s, %s,NOW(), %s, %s)
                     """,
-                    (name, email, course_name, user_id)
+                    (name, email, course_name, platform, cert_number, user_id)
                 )
 
 
