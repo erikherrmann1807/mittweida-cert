@@ -5,7 +5,7 @@ from src.auth.otp_database.init_database import init_sqlitedb
 from src.auth.otp_database.operations import *
 from src.auth.otp_mail.config import RESEND_COOLDOWN, EMAIL_RE, CODE_LEN, CODE_TTL_SECONDS, MAX_ATTEMPTS
 from src.auth.otp_mail.email import send_mail_code
-from src.auth.otp_mail.util import hash_code, random_numeric_code
+from util import random_numeric_code, hash_code
 
 
 def request_login_code(email: str) -> str:
