@@ -7,9 +7,8 @@ import tempfile
 SOFFICE_PATH = r"C:\Program Files\LibreOffice\program\soffice.exe"
 
 
-def convert_odt_to_pdf(template_path, pdf_path, placeholders, soffice_path=SOFFICE_PATH):
+def convert_odt_to_pdf(template_path, placeholders, soffice_path=SOFFICE_PATH):
     template_path = Path(template_path).resolve()
-    pdf_path = Path(pdf_path).resolve()
 
     soffice_exe = Path(soffice_path)
     if not soffice_exe.exists():
@@ -56,35 +55,11 @@ def convert_odt_to_pdf(template_path, pdf_path, placeholders, soffice_path=SOFFI
         if not temp_pdf.exists():
             raise FileNotFoundError(f"Erwartete PDF nicht gefunden: {temp_pdf}")
 
-        pdf_path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.move(str(temp_pdf), str(pdf_path))
+        pdf_bytes = temp_pdf.read_bytes()
+        return pdf_bytes
 
     finally:
         try:
             shutil.rmtree(temp_dir)
         except PermissionError:
             pass
-
-    return pdf_path
-
-
-if __name__ == "__main__":
-    placeholders = {
-        "{{name}}": "Erik",
-        "{{email}}": "erik@example.de",
-        "{{course_name}}": "Python",
-        "{{platform}}": "Opal",
-        "{{created_at}}": "24.11.2025",
-        "{{cert_number}}": "12345678f",
-    }
-
-    vorlage_datei = "data/Cert.odt"
-    pdf_ziel_datei = "output/Cert_filled.pdf"
-
-    pdf_pfad = convert_odt_to_pdf(
-        template_path=vorlage_datei,
-        pdf_path=pdf_ziel_datei,
-        placeholders=placeholders
-    )
-
-    print(f"PDF erstellt: {pdf_pfad}")

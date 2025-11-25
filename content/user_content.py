@@ -6,6 +6,7 @@ from PIL import Image
 from babel.dates import format_date
 
 from src.database.operations import set_alias_email, get_data_per_user
+from src.generate_pdf import convert_odt_to_pdf
 
 
 def user_content():
@@ -50,9 +51,9 @@ def user_content():
             certs_per_row = 2
             certs = get_data_per_user(st.session_state.auth_email)
             filtered_certs = [c for c in certs if
-                               (selected_year == "Alle" or selected_year in c[5].isoformat()) and
-                               (selected_platform == "Alle" or c[4] == selected_platform) and
-                               (search_query.lower() in c[3].lower() if search_query else True)]
+                              (selected_year == "Alle" or selected_year in c[5].isoformat()) and
+                              (selected_platform == "Alle" or c[4] == selected_platform) and
+                              (search_query.lower() in c[3].lower() if search_query else True)]
             rows = [filtered_certs[i:i + certs_per_row] for i in range(0, len(filtered_certs), certs_per_row)]
             with st.container(height=625, border=False):
                 for row in rows:
@@ -61,18 +62,36 @@ def user_content():
                         with cert_columns[idx]:
                             with st.container(border=True, height=300, vertical_alignment="distribute"):
                                 cert_id, name, email, course_name, platform, created_at, cert_number, user_id = cert
-                                date =  format_date(created_at, locale='de_DE')
+                                date = format_date(created_at, locale='de_DE')
                                 st.markdown(f"#### {course_name}")
                                 st.markdown(f"**Name: {name}**")
                                 st.markdown(f"**Plattform: {platform}**")
                                 st.markdown(f"**Datum:** {date}")
-                                if st.button("Zertifikat generieren", key=f"download_{course_name}", use_container_width=True):
-                                    download_dialog(title=course_name)
+                                if st.button("Zertifikat generieren", key=f"download_{course_name}",
+                                             use_container_width=True):
+                                    download_dialog(name=name, email=email, course_name=course_name,
+                                                    platform=platform, created_at=date, cert_number=cert_number)
+
 
 @st.dialog("Zertifikat herunterladen")
-def download_dialog(title: str):
-    #TODO: Generate pdf from template
+def download_dialog(name: str, email: str, course_name: str, platform: str, created_at: str,
+                    cert_number: str):
     with st.spinner('Generating ...'):
-        time.sleep(5)
-        st.write(f"Sie können Ihr Zertifikat für '{title}' nun herunterladen.")
-        st.download_button("PDF herunterladen", data="")
+        placeholder = {
+            "{{name}}": name,
+            "{{email}}": email,
+            "{{course_name}}": course_name,
+            "{{platform}}": platform,
+            "{{created_at}}": created_at,
+            "{{cert_number}}": cert_number,
+        }
+
+        template_file = "data/Cert.odt"
+
+        pdf = convert_odt_to_pdf(
+            template_path=template_file,
+            placeholders=placeholder
+        )
+        st.write(f"Sie können Ihr Zertifikat für '{course_name}' nun herunterladen.")
+        if st.download_button("PDF herunterladen", data=pdf,file_name=f"Zertifikat-{name}-{course_name}.pdf", mime="application/pdf"):
+            st.rerun()
