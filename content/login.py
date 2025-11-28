@@ -1,5 +1,3 @@
-import time
-
 import streamlit as st
 
 from src.auth.otp_mail.config import ADMIN_EMAIL
@@ -19,6 +17,23 @@ def login_gate():
     if "user_exists" not in st.session_state:
         st.session_state.user_exists = False
 
+    if "login_mail" not in st.session_state:
+        st.session_state.login_mail = None
+
+    if "login_hash_code" not in st.session_state:
+        st.session_state.login_hash_code = None
+
+    if "code_created_at" not in st.session_state:
+        st.session_state.code_created_at = None
+
+    if "code_expired_at" not in st.session_state:
+        st.session_state.code_expired_at = None
+
+    if "login_attempts" not in st.session_state:
+        st.session_state.login_attempts = 0
+
+    if "code_last_sent_at" not in st.session_state:
+        st.session_state.code_last_sent_at = None
 
     if not st.session_state.auth_email and not st.session_state.admin_authenticated:
         with st.container(border=True):
@@ -28,6 +43,7 @@ def login_gate():
                 st.session_state.user_exists = check_existing_user(email=email_req)
                 if st.session_state.user_exists:
                     try:
+                        st.session_state.login_mail = email_req.strip().lower()
                         msg = request_login_code(email_req)
                         st.success(msg)
                     except Exception as e:

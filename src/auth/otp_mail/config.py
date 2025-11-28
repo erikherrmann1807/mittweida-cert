@@ -19,7 +19,6 @@ CODE_LEN = 6
 CODE_TTL_SECONDS = 10 * 60
 MAX_ATTEMPTS = 6
 RESEND_COOLDOWN = 30
-DB_PATH = Path("otp.db")
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 # ----------- Admin E-Mail(s) -----------
