@@ -1,5 +1,3 @@
-import time
-
 import streamlit as st
 
 from src.auth.otp_mail.config import ADMIN_EMAIL

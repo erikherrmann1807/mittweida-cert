@@ -44,6 +44,7 @@ def verify_login_code(email: str, code: str) -> bool:
         return False
 
     if st.session_state.login_attempts >= MAX_ATTEMPTS:
+        st.session_state.login_attempts = 0
         return False
 
     ok = hmac.compare_digest(st.session_state.login_hash_code, hash_code(email, code.strip()))
