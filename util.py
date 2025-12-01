@@ -1,4 +1,6 @@
 import hashlib
+import json
+import os
 import secrets
 import string
 
@@ -49,3 +51,9 @@ def get_placeholders(name: str, email: str, course_name: str, platform: str, cre
     }
 
     return placeholders
+
+
+def get_config():
+    with open(os.path.join('.streamlit/', 'config.json'), 'r', encoding='utf-8') as config_file:
+        config = json.load(config_file)
+    return config

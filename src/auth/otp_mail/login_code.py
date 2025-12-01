@@ -4,17 +4,18 @@ import streamlit as st
 
 from src.auth.otp_mail.config import RESEND_COOLDOWN, EMAIL_RE, CODE_LEN, CODE_TTL_SECONDS, MAX_ATTEMPTS
 from src.auth.otp_mail.email import send_mail_code
-from util import random_numeric_code, hash_code
+from util import random_numeric_code, hash_code, get_config
 
+config = get_config()
 
 def request_login_code(email: str) -> str:
     email = email.strip().lower()
     if not EMAIL_RE.match(email):
-        return "Ungültige E-Mail-Adresse."
+        return config['texts']['login']['invalid_mail']
     now = int(time.time())
 
     if st.session_state.code_last_sent_at is not None and now - st.session_state.code_last_sent_at < RESEND_COOLDOWN:
-        return "Bitte warte kurz, bevor du einen neuen Code anforderst."
+        return config['texts']['login']['code_cooldown']
 
     code = random_numeric_code(CODE_LEN)
     code_hash = hash_code(email, code)
