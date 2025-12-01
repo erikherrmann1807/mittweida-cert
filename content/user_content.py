@@ -25,22 +25,24 @@ def user_content():
 
 def display_certs(certs_per_row: int, rows: list[list[tuple[Any, ...]]]):
     cert_cfg = config['texts']['user_content']['cert_infos']
-    with st.container(height=625, border=False):
+    with st.container(height=670, border=False):
         for row in rows:
             cert_columns = st.columns(certs_per_row)
             for idx, cert in enumerate(row):
                 with cert_columns[idx]:
-                    with st.container(border=True, height=300, vertical_alignment="distribute"):
-                        cert_id, name, email, course_name, platform, created_at, cert_number, user_id = cert
+                    with st.container(border=True, height=320, vertical_alignment="distribute"):
+                        cert_id, name, email, course_name, platform, created_at, cert_number, institution,user_id = cert
                         date = format_date(created_at, locale='de_DE')
                         st.markdown(f"#### {course_name}")
                         st.markdown(f"{cert_cfg['name']} {name}")
                         st.markdown(f"{cert_cfg['platform']} {platform}")
                         st.markdown(f"{cert_cfg['date']} {date}")
+                        st.markdown(f"{cert_cfg['institution']} {institution}")
                         if st.button(cert_cfg['generate_button'], key=f"download_{course_name}",
                                      use_container_width=True):
                             download_dialog(name=name, email=email, course_name=course_name,
-                                            platform=platform, created_at=date, cert_number=cert_number)
+                                            platform=platform, created_at=date, cert_number=cert_number,
+                                            institution=institution)
 
 
 def filter_logic(search_query: Any | None, selected_platform: Any | None, selected_year: str | None):
@@ -87,7 +89,7 @@ def verify_and_alias():
                 st.success(f"Alternative E-Mail '{alternate_email}' hinterlegt.")
         try:
             qr_image = Image.open(os.path.join('assets', 'images/qrcode.png'))
-            qrcode_column.image(qr_image, caption=config['texts']['user_content']['qrcode_caption'], use_container_width=True)
+            qrcode_column.image(qr_image, caption=config['texts']['user_content']['qrcode_caption'], width='stretch')
         except FileNotFoundError:
             qrcode_column.write("")
 
@@ -96,7 +98,7 @@ def header():
     placeholder_column, logo_column = st.columns(2)
     try:
         logo = Image.open(os.path.join('assets', 'images/logo.png'))
-        logo_column.image(logo, use_container_width=True)
+        logo_column.image(logo, width='stretch')
     except FileNotFoundError:
         logo_column.write("")
 
@@ -105,7 +107,7 @@ def header():
 
 @st.dialog(config['texts']['user_content']['download_cert']['dialog_header'])
 def download_dialog(name: str, email: str, course_name: str, platform: str, created_at: str,
-                    cert_number: str):
+                    cert_number: str, institution: str):
     download_cfg = config['texts']['user_content']['download_cert']
     with st.spinner(download_cfg['generating_cert']):
         placeholder = {
@@ -115,6 +117,7 @@ def download_dialog(name: str, email: str, course_name: str, platform: str, crea
             "{{platform}}": platform,
             "{{created_at}}": created_at,
             "{{cert_number}}": cert_number,
+            "{{institution}}": institution
         }
 
         template_file = "data/Cert.odt"

@@ -12,6 +12,11 @@ def admin_content():
         st.markdown(admin_cfg['upload_certs'])
         uploaded_file = st.file_uploader(admin_cfg['upload_csv'], type=["csv"],
                                          accept_multiple_files=True)
-        if uploaded_file:
-            insert_csv(uploaded_file)
-            st.success(admin_cfg['upload_success'])
+        institution = st.text_input(admin_cfg['institution'],)
+
+        if st.button(label=admin_cfg['confirm_upload_button']):
+            if institution and uploaded_file:
+                insert_csv(uploaded_file, institution)
+                st.success(admin_cfg['upload_success'])
+            else:
+                st.warning(admin_cfg['upload_warning'])
