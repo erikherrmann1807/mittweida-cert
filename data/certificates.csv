@@ -2,28 +2,28 @@ name;email;course_name;platform;created_at;cert_number
 Julia Hoffmann;julia.hoffmann@example.com;Datenschutz und DSGVO;Moodle;2024-10-24;CERT-20241024-001
 Lisa Braun;lisa.braun@example.com;Zeitmanagement kompakt;Moodle;2024-08-10;CERT-20240810-002
 Paul Schneider;paul.schneider@example.com;Excel für Fortgeschrittene;Opal;2024-04-18;CERT-20240418-003
-Max Müller;max.mueller@example.com;Arbeitssicherheit Basis;In Präsenz;2024-03-08;CERT-20240308-004
+Max Müller;max.mueller@example.com;Arbeitssicherheit Basis;Präsenz;2024-03-08;CERT-20240308-004
 Anna Schmidt;anna.schmidt@example.com;Einführung in Python;Opal;2024-10-15;CERT-20241015-005
 Tim Becker;tim.becker@example.com;Agiles Arbeiten mit Scrum;Moodle;2024-11-07;CERT-20241107-006
 Laura Weber;laura.weber@example.com;Grundlagen Projektmanagement;Moodle;2024-01-16;CERT-20240116-007
 Sophie Wagner;sophie.wagner@example.com;Excel für Fortgeschrittene;Moodle;2024-11-10;CERT-20241110-008
-Lisa Braun;lisa.braun@example.com;Präsentationstechniken;In Präsenz;2024-02-09;CERT-20240209-009
-Daniel Keller;daniel.keller@example.com;Agiles Arbeiten mit Scrum;In Präsenz;2024-02-14;CERT-20240214-010
+Lisa Braun;lisa.braun@example.com;Präsentationstechniken;Präsenz;2024-02-09;CERT-20240209-009
+Daniel Keller;daniel.keller@example.com;Agiles Arbeiten mit Scrum;Präsenz;2024-02-14;CERT-20240214-010
 Julia Hoffmann;julia.hoffmann@example.com;Agiles Arbeiten mit Scrum;Opal;2024-04-07;CERT-20240407-011
-Paul Schneider;paul.schneider@example.com;Agiles Arbeiten mit Scrum;In Präsenz;2024-08-21;CERT-20240821-012
+Paul Schneider;paul.schneider@example.com;Agiles Arbeiten mit Scrum;Präsenz;2024-08-21;CERT-20240821-012
 Anna Schmidt;anna.schmidt@example.com;Grundlagen Projektmanagement;Moodle;2024-01-31;CERT-20240131-013
 Anna Schmidt;anna.schmidt@example.com;Präsentationstechniken;Opal;2024-09-04;CERT-20240904-014
 Daniel Keller;daniel.keller@example.com;Excel für Fortgeschrittene;Opal;2024-08-16;CERT-20240816-015
 Paul Schneider;paul.schneider@example.com;Einführung in Python;Opal;2024-07-19;CERT-20240719-016
 Jonas Fischer;jonas.fischer@example.com;Datenschutz und DSGVO;Moodle;2024-07-29;CERT-20240729-017
-Jonas Fischer;jonas.fischer@example.com;Einführung in Python;In Präsenz;2024-07-26;CERT-20240726-018
+Jonas Fischer;jonas.fischer@example.com;Einführung in Python;Präsenz;2024-07-26;CERT-20240726-018
 Daniel Keller;daniel.keller@example.com;Einführung in Python;Opal;2024-07-03;CERT-20240703-019
-Laura Weber;laura.weber@example.com;Excel für Fortgeschrittene;In Präsenz;2024-11-11;CERT-20241111-020
+Laura Weber;laura.weber@example.com;Excel für Fortgeschrittene;Präsenz;2024-11-11;CERT-20241111-020
 Paul Schneider;paul.schneider@example.com;Datenschutz und DSGVO;Moodle;2024-09-02;CERT-20240902-021
-Julia Hoffmann;julia.hoffmann@example.com;Excel für Fortgeschrittene;In Präsenz;2024-08-30;CERT-20240830-022
-Paul Schneider;paul.schneider@example.com;Zeitmanagement kompakt;In Präsenz;2024-07-10;CERT-20240710-023
+Julia Hoffmann;julia.hoffmann@example.com;Excel für Fortgeschrittene;Präsenz;2024-08-30;CERT-20240830-022
+Paul Schneider;paul.schneider@example.com;Zeitmanagement kompakt;Präsenz;2024-07-10;CERT-20240710-023
 Max Müller;max.mueller@example.com;Grundlagen Projektmanagement;Moodle;2024-06-27;CERT-20240627-024
-Tim Becker;tim.becker@example.com;Grundlagen Projektmanagement;In Präsenz;2024-01-14;CERT-20240114-025
+Tim Becker;tim.becker@example.com;Grundlagen Projektmanagement;Präsenz;2024-01-14;CERT-20240114-025
 Max Müller;max.mueller@example.com;Agiles Arbeiten mit Scrum;Opal;2024-05-08;CERT-20240508-026
 Julia Hoffmann;julia.hoffmann@example.com;Grundlagen Projektmanagement;Moodle;2024-07-30;CERT-20240730-027
 Tim Becker;tim.becker@example.com;Grundlagen Projektmanagement;Moodle;2024-02-21;CERT-20240221-028
@@ -31,13 +31,13 @@ Daniel Keller;daniel.keller@example.com;Datenschutz und DSGVO;Opal;2024-03-25;CE
 Jonas Fischer;jonas.fischer@example.com;Grundlagen Projektmanagement;Opal;2024-11-03;CERT-20241103-030
 Lisa Braun;lisa.braun@example.com;Arbeitssicherheit Basis;Moodle;2024-07-24;CERT-20240724-031
 Jonas Fischer;jonas.fischer@example.com;Arbeitssicherheit Basis;Moodle;2024-07-31;CERT-20240731-032
-Paul Schneider;paul.schneider@example.com;Grundlagen Projektmanagement;In Präsenz;2024-09-12;CERT-20240912-033
+Paul Schneider;paul.schneider@example.com;Grundlagen Projektmanagement;Präsenz;2024-09-12;CERT-20240912-033
 Daniel Keller;daniel.keller@example.com;Präsentationstechniken;Opal;2024-04-11;CERT-20240411-034
 Julia Hoffmann;julia.hoffmann@example.com;Arbeitssicherheit Basis;Opal;2024-04-09;CERT-20240409-035
 Jonas Fischer;jonas.fischer@example.com;Präsentationstechniken;Moodle;2024-08-24;CERT-20240824-036
-Julia Hoffmann;julia.hoffmann@example.com;Präsentationstechniken;In Präsenz;2024-01-07;CERT-20240107-037
+Julia Hoffmann;julia.hoffmann@example.com;Präsentationstechniken;Präsenz;2024-01-07;CERT-20240107-037
 Sophie Wagner;sophie.wagner@example.com;Präsentationstechniken;Moodle;2024-03-04;CERT-20240304-038
-Lisa Braun;lisa.braun@example.com;Datenschutz und DSGVO;In Präsenz;2024-03-29;CERT-20240329-039
+Lisa Braun;lisa.braun@example.com;Datenschutz und DSGVO;Präsenz;2024-03-29;CERT-20240329-039
 Max Müller;max.mueller@example.com;Einführung in Python;Moodle;2024-12-20;CERT-20241220-040
 Jonas Fischer;jonas.fischer@example.com;Excel für Fortgeschrittene;Opal;2024-10-28;CERT-20241028-041
 Laura Weber;laura.weber@example.com;Einführung in Python;Opal;2024-09-03;CERT-20240903-042
@@ -46,6 +46,6 @@ Sophie Wagner;sophie.wagner@example.com;Einführung in Python;Moodle;2024-07-12;
 Tim Becker;tim.becker@example.com;Zeitmanagement kompakt;Opal;2024-10-25;CERT-20241025-045
 Sophie Wagner;sophie.wagner@example.com;Grundlagen Projektmanagement;Moodle;2024-06-11;CERT-20240611-046
 Jonas Fischer;jonas.fischer@example.com;Zeitmanagement kompakt;Opal;2024-11-18;CERT-20241118-047
-Jonas Fischer;jonas.fischer@example.com;Arbeitssicherheit Basis;In Präsenz;2024-09-22;CERT-20240922-048
+Jonas Fischer;jonas.fischer@example.com;Arbeitssicherheit Basis;Präsenz;2024-09-22;CERT-20240922-048
 Laura Weber;laura.weber@example.com;Präsentationstechniken;Opal;2024-07-09;CERT-20240709-049
 Jonas Fischer;jonas.fischer@example.com;Datenschutz und DSGVO;Opal;2024-02-09;CERT-20240209-050
