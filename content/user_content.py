@@ -31,7 +31,7 @@ def display_certs(certs_per_row: int, rows: list[list[tuple[Any, ...]]]):
             for idx, cert in enumerate(row):
                 with cert_columns[idx]:
                     with st.container(border=True, height=320, vertical_alignment="distribute"):
-                        cert_id, name, email, course_name, platform, created_at, cert_number, institution, logo, user_id = cert
+                        cert_id, name, email, course_name, platform, created_at, cert_number, institution, logo_path, user_id = cert
                         date = format_date(created_at, locale='de_DE')
                         st.markdown(f"#### {course_name}")
                         st.markdown(f"{cert_cfg['name']} {name}")
@@ -42,7 +42,7 @@ def display_certs(certs_per_row: int, rows: list[list[tuple[Any, ...]]]):
                                      use_container_width=True):
                             download_dialog(name=name, email=email, course_name=course_name,
                                             platform=platform, created_at=date, cert_number=cert_number,
-                                            institution=institution, logo=logo)
+                                            institution=institution, logo_path=logo_path)
 
 
 def filter_logic(search_query: Any | None, selected_platform: Any | None, selected_year: str | None):
@@ -107,16 +107,17 @@ def header():
 
 @st.dialog(config['texts']['user_content']['download_cert']['dialog_header'])
 def download_dialog(name: str, email: str, course_name: str, platform: str, created_at: str,
-                    cert_number: str, institution: str, logo):
+                    cert_number: str, institution: str, logo_path: str):
     download_cfg = config['texts']['user_content']['download_cert']
     with st.spinner(download_cfg['generating_cert']):
-        placeholder = get_placeholders(name, email, course_name, platform, created_at, cert_number, institution, logo)
+        placeholder = get_placeholders(name, email, course_name, platform, created_at, cert_number, institution)
 
         template_file = "data/Cert.odt"
 
         pdf = convert_odt_to_pdf(
             template_path=template_file,
-            placeholders=placeholder
+            placeholders=placeholder,
+            logo_path=logo_path,
         )
         st.write(download_cfg['generating_success'])
         if st.download_button(download_cfg['download_button'], data=pdf,file_name=f"Zertifikat-{name}-{course_name}.pdf", mime="application/pdf"):

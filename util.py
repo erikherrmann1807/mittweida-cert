@@ -40,7 +40,7 @@ def random_numeric_code(n=CODE_LEN) -> str:
 def hash_code(email: str, code: str) -> str:
     return hashlib.sha256((email + ":" + code).encode("utf-8")).hexdigest()
 
-def get_placeholders(name: str, email: str, course_name: str, platform: str, created_at: str, cert_number: str, institution: str, logo: bytes) -> dict:
+def get_placeholders(name: str, email: str, course_name: str, platform: str, created_at: str, cert_number: str, institution: str) -> dict:
     placeholders = {
         "{{name}}": name,
         "{{email}}": email,
@@ -49,7 +49,6 @@ def get_placeholders(name: str, email: str, course_name: str, platform: str, cre
         "{{created_at}}": created_at,
         "{{cert_number}}": cert_number,
         "{{institution}}": institution,
-        "{{logo}}": logo
     }
     return placeholders
 
@@ -60,4 +59,7 @@ def get_config():
     return config
 
 def get_dummy_image_path():
-    return "Pictures/100000010000045700000237566D3BCA.png"
+    return "Pictures/100000010000011B0000008ECF685CA0.png"
+
+def get_logo_path():
+    return "logos"
