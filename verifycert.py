@@ -12,7 +12,7 @@ with st.container(border=True):
     if search_query:
         cert = verify_cert(search_query)
         if cert:
-            cert_id, name, email, course_name, platform, created_at, cert_number, user_id = cert
+            cert_id, name, email, course_name, platform, created_at, cert_number, institution, user_id = cert
             date = format_date(created_at, locale='de_DE')
             st.success(f"Zertifikat {search_query} existiert!")
             st.markdown(f"Es wurde am {date} ausgestellt für {name}. Im Rahmen des Kurses '{course_name}'.")
