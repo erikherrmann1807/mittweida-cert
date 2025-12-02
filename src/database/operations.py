@@ -57,7 +57,7 @@ def get_user(cur, email: str):
     return cur.fetchone()[0]
 
 
-def insert_csv(csv_file):
+def insert_csv(csv_file, institution):
     with postgres() as con:
         with con.cursor() as cur:
             df = pd.read_csv(csv_file[0], sep=';')
@@ -70,10 +70,10 @@ def insert_csv(csv_file):
                 user_id = get_or_create_user_id(cur, email, None)
                 cur.execute(
                     """
-                    INSERT INTO certificates (name, email, course_name, platform, created_at, cert_number, user_id) 
-                    VALUES (%s, %s, %s, %s,NOW(), %s, %s)
+                    INSERT INTO certificates (name, email, course_name, platform, created_at, cert_number, institution, user_id) 
+                    VALUES (%s, %s, %s, %s,NOW(), %s, %s, %s)
                     """,
-                    (name, email, course_name, platform, cert_number, user_id)
+                    (name, email, course_name, platform, cert_number, institution, user_id)
                 )
 
 
