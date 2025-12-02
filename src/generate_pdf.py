@@ -1,3 +1,4 @@
+import os
 import zipfile
 import shutil
 from pathlib import Path
@@ -9,7 +10,7 @@ from util import get_dummy_image_path
 SOFFICE_PATH = r"C:\Program Files\LibreOffice\program\soffice.exe"
 
 
-def convert_odt_to_pdf(template_path, placeholders, soffice_path=SOFFICE_PATH):
+def convert_odt_to_pdf(template_path, placeholders, logo_path, soffice_path=SOFFICE_PATH):
     template_path = Path(template_path).resolve()
 
 
@@ -38,8 +39,13 @@ def convert_odt_to_pdf(template_path, placeholders, soffice_path=SOFFICE_PATH):
                         text = text.replace(placeholder, value)
                     data = text.encode("utf-8")
 
+                print(get_dummy_image_path())
                 if item.filename == get_dummy_image_path():
-                    data = placeholders['{{logo}}']
+
+                    print("Logo Pfad: ", logo_path, "exists: ", os.path.exists(logo_path))
+                    if os.path.exists(logo_path):
+                        with open(logo_path, "rb") as f:
+                            data = f.read()
 
                 zOut.writestr(item, data)
 

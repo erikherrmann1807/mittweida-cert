@@ -32,7 +32,7 @@ def init_database():
                     created_at timestamp default now(),
                     cert_number varchar(255),
                     institution varchar(255),
-                    logo bytea,
+                    logo_path varchar(255),
                     user_id serial constraint certificates_users_id_fk references public.users
                 );
             """)
