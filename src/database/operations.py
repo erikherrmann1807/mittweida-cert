@@ -89,3 +89,14 @@ def get_data_per_user(email: str):
             (user_id,)
             )
             return cur.fetchall()
+
+
+def verify_cert(cert_number: str):
+    with postgres() as con:
+        with con.cursor() as cur:
+            cur.execute("""
+                        SELECT * FROM certificates WHERE cert_number = %s
+                        """,
+                        (cert_number,)
+                        )
+            return cur.fetchone()
