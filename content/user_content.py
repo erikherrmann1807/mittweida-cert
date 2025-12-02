@@ -88,7 +88,7 @@ def verify_and_alias():
                 set_alias_email(main_email=st.session_state.auth_email, alias_email=alternate_email)
                 st.success(f"Alternative E-Mail '{alternate_email}' hinterlegt.")
         try:
-            qr_image = Image.open(os.path.join('assets', 'images/qrcode.png'))
+            qr_image = Image.open(os.path.join('assets', 'images/qrcode_verify_cert.png'))
             qrcode_column.image(qr_image, caption=config['texts']['user_content']['qrcode_caption'], width='stretch')
         except FileNotFoundError:
             qrcode_column.write("")
