@@ -7,7 +7,7 @@ from babel.dates import format_date
 
 from src.database.operations import set_alias_email, get_data_per_user
 from src.generate_pdf import convert_odt_to_pdf
-from util import get_config
+from util import get_config, get_placeholders
 
 config = get_config()
 
@@ -31,7 +31,7 @@ def display_certs(certs_per_row: int, rows: list[list[tuple[Any, ...]]]):
             for idx, cert in enumerate(row):
                 with cert_columns[idx]:
                     with st.container(border=True, height=320, vertical_alignment="distribute"):
-                        cert_id, name, email, course_name, platform, created_at, cert_number, institution,user_id, logo = cert
+                        cert_id, name, email, course_name, platform, created_at, cert_number, institution, logo, user_id = cert
                         date = format_date(created_at, locale='de_DE')
                         st.markdown(f"#### {course_name}")
                         st.markdown(f"{cert_cfg['name']} {name}")
@@ -42,7 +42,7 @@ def display_certs(certs_per_row: int, rows: list[list[tuple[Any, ...]]]):
                                      use_container_width=True):
                             download_dialog(name=name, email=email, course_name=course_name,
                                             platform=platform, created_at=date, cert_number=cert_number,
-                                            institution=institution)
+                                            institution=institution, logo=logo)
 
 
 def filter_logic(search_query: Any | None, selected_platform: Any | None, selected_year: str | None):
@@ -110,15 +110,7 @@ def download_dialog(name: str, email: str, course_name: str, platform: str, crea
                     cert_number: str, institution: str, logo):
     download_cfg = config['texts']['user_content']['download_cert']
     with st.spinner(download_cfg['generating_cert']):
-        placeholder = {
-            "{{name}}": name,
-            "{{email}}": email,
-            "{{course_name}}": course_name,
-            "{{platform}}": platform,
-            "{{created_at}}": created_at,
-            "{{cert_number}}": cert_number,
-            "{{institution}}": institution
-        }
+        placeholder = get_placeholders(name, email, course_name, platform, created_at, cert_number, institution, logo)
 
         template_file = "data/Cert.odt"
 
