@@ -31,7 +31,7 @@ def display_certs(certs_per_row: int, rows: list[list[tuple[Any, ...]]]):
             for idx, cert in enumerate(row):
                 with cert_columns[idx]:
                     with st.container(border=True, height=320, vertical_alignment="distribute"):
-                        cert_id, name, email, course_name, platform, created_at, cert_number, institution,user_id = cert
+                        cert_id, name, email, course_name, platform, created_at, cert_number, institution,user_id, logo = cert
                         date = format_date(created_at, locale='de_DE')
                         st.markdown(f"#### {course_name}")
                         st.markdown(f"{cert_cfg['name']} {name}")
@@ -107,7 +107,7 @@ def header():
 
 @st.dialog(config['texts']['user_content']['download_cert']['dialog_header'])
 def download_dialog(name: str, email: str, course_name: str, platform: str, created_at: str,
-                    cert_number: str, institution: str):
+                    cert_number: str, institution: str, logo):
     download_cfg = config['texts']['user_content']['download_cert']
     with st.spinner(download_cfg['generating_cert']):
         placeholder = {
