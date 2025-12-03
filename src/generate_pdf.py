@@ -1,14 +1,18 @@
+import os
 import zipfile
 import shutil
 from pathlib import Path
 import subprocess
 import tempfile
 
+from util import get_dummy_image_path
+
 SOFFICE_PATH = r"C:\Program Files\LibreOffice\program\soffice.exe"
 
 
-def convert_odt_to_pdf(template_path, placeholders, soffice_path=SOFFICE_PATH):
+def convert_odt_to_pdf(template_path, placeholders, logo_path, soffice_path=SOFFICE_PATH):
     template_path = Path(template_path).resolve()
+
 
     soffice_exe = Path(soffice_path)
     if not soffice_exe.exists():
@@ -30,8 +34,18 @@ def convert_odt_to_pdf(template_path, placeholders, soffice_path=SOFFICE_PATH):
                 if item.filename == "content.xml":
                     text = data.decode("utf-8")
                     for placeholder, value in placeholders.items():
+                        if placeholder == '{{logo}}':
+                            continue
                         text = text.replace(placeholder, value)
                     data = text.encode("utf-8")
+
+                print(get_dummy_image_path())
+                if item.filename == get_dummy_image_path():
+
+                    print("Logo Pfad: ", logo_path, "exists: ", os.path.exists(logo_path))
+                    if os.path.exists(logo_path):
+                        with open(logo_path, "rb") as f:
+                            data = f.read()
 
                 zOut.writestr(item, data)
 
