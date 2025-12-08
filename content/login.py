@@ -23,7 +23,7 @@ def language_section():
     with st.container(border=True):
         locale = st.radio(label='Language', options=list(get_lang_options().keys()))
         st.session_state.language = locale.lower()
-        if st.button("Sprache einstellen"):
+        if st.button(config['texts'][st.session_state.language]['login']['language_selection']):
             st.session_state.language_set = True
             st.rerun()
 
