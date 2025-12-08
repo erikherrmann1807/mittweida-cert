@@ -8,7 +8,7 @@ from util import get_config, get_logo_path
 config = get_config()
 
 def admin_content():
-    admin_cfg = config['texts']['admin_content']
+    admin_cfg = config['texts'][st.session_state.language]['admin_content']
     st.markdown(admin_cfg['header'], unsafe_allow_html=True)
     with st.container(border=True):
         st.markdown(admin_cfg['upload_certs'])
