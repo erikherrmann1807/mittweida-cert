@@ -63,3 +63,10 @@ def get_dummy_image_path():
 
 def get_logo_path():
     return "logos"
+
+def get_lang_options():
+    lang_options = {
+        "German": "de_DE",
+        "English": "en_US",
+    }
+    return lang_options
