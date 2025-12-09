@@ -86,7 +86,7 @@ def verify_and_alias():
                                             help=config['texts'][st.session_state.language]['user_content']['alternative_mail']['help'])
             if alternate_email:
                 set_alias_email(main_email=st.session_state.auth_email, alias_email=alternate_email)
-                st.success(f"Alternative E-Mail '{alternate_email}' hinterlegt.")
+                st.success(config['texts'][st.session_state.language]['user_content']['alternative_mail']['success'])
         try:
             qr_image = Image.open(os.path.join('assets', 'images/qrcode_verify_cert.png'))
             qrcode_column.image(qr_image, caption=config['texts'][st.session_state.language]['user_content']['qrcode_caption'], width='stretch')
