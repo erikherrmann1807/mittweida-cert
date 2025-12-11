@@ -3,6 +3,9 @@ import json
 import os
 import secrets
 import string
+from pathlib import Path
+
+import streamlit as st
 
 from src.auth.otp_mail.config import CODE_LEN
 from src.database.init_database import postgres
@@ -63,3 +66,41 @@ def get_dummy_image_path():
 
 def get_logo_path():
     return "logos"
+
+def get_lang_options():
+    lang_options = {
+        "German": "de_DE",
+        "English": "en_US",
+    }
+    return lang_options
+
+strings_path = Path(".streamlit/config.json")
+STRINGS = json.loads(strings_path.read_text(encoding="utf-8"))
+
+def get_from_path(data: dict, path: str | list[str]):
+    if isinstance(path, str):
+        parts = path.split(".")
+    else:
+        parts = path
+
+    node = data
+    for part in parts:
+        node = node[part]
+    return node
+
+
+def t(path: str | list[str], **kwargs) -> str:
+    try:
+        template = get_from_path(STRINGS, path)
+    except KeyError:
+        return f"[missing:{path}]"
+
+    if not isinstance(template, str):
+        return f"[not a string:{path}]"
+
+    try:
+        return template.format(**kwargs)
+    except KeyError as e:
+        missing = e.args[0]
+        return f"[missing placeholder '{missing}' in '{path}']"
+
