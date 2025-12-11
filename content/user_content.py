@@ -105,20 +105,33 @@ def header():
     st.markdown(config['texts'][st.session_state.language]['user_content']['header'], unsafe_allow_html=True)
 
 
-@st.dialog(config['texts'][st.session_state.language]['user_content']['download_cert']['dialog_header'])
 def download_dialog(name: str, email: str, course_name: str, platform: str, created_at: str,
                     cert_number: str, institution: str, logo_path: str):
-    download_cfg = config['texts'][st.session_state.language]['user_content']['download_cert']
-    with st.spinner(download_cfg['generating_cert']):
-        placeholder = get_placeholders(name, email, course_name, platform, created_at, cert_number, institution)
+    lang = st.session_state.get("language")
+    download_cfg = config['texts'][lang]['user_content']['download_cert']
 
-        template_file = "data/Cert.odt"
+    @st.dialog(download_cfg['dialog_header'])
+    def _dialog():
+        with st.spinner(download_cfg['generating_cert']):
+            placeholder = get_placeholders(
+                name, email, course_name, platform, created_at, cert_number, institution
+            )
 
-        pdf = convert_odt_to_pdf(
-            template_path=template_file,
-            placeholders=placeholder,
-            logo_path=logo_path,
-        )
-        st.write(download_cfg['generating_success'])
-        if st.download_button(download_cfg['download_button'], data=pdf,file_name=f"Zertifikat-{name}-{course_name}.pdf", mime="application/pdf"):
-            st.rerun()
+            template_file = "data/Cert.odt"
+
+            pdf = convert_odt_to_pdf(
+                template_path=template_file,
+                placeholders=placeholder,
+                logo_path=logo_path,
+            )
+
+            st.write(download_cfg['generating_success'])
+            if st.download_button(
+                download_cfg['download_button'],
+                data=pdf,
+                file_name=f"Zertifikat-{name}-{course_name}.pdf",
+                mime="application/pdf"
+            ):
+                st.rerun()
+
+    _dialog()
