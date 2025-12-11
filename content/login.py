@@ -9,12 +9,12 @@ from util import get_config, get_lang_options, Role
 
 config = get_config()
 
-def login_gate():
+def login_gate(role: str):
     init_database()
 
     if not st.session_state.auth_email and not st.session_state.admin_authenticated:
         with st.container(border=True):
-            email_req = mail_section()
+            email_req = mail_section(role=role)
             code_section(email_req)
         st.stop()
 
@@ -49,8 +49,11 @@ def role_selection():
         with role_columns[2]:
             with st.container(border=True):
                 st.image(image="assets/images/dummy_image.png")
-                if st.button(label="Als Admin registrieren", key="admin_registration"):
+                if st.button(label="Als Admin registrieren", key="register_admin"):
+                    st.session_state.admin_registration = True
                     st.rerun()
+
+        st.stop()
 
     role_dialog()
 
@@ -61,7 +64,7 @@ def code_section(email_req: str | None):
                                    placeholder=config['texts'][st.session_state.language]['login']['code_placeholder'])
         if st.button(config['texts'][st.session_state.language]['login']['login_button'], use_container_width=True):
             if verify_login_code(email_req, code_input):
-                if email_req.strip().lower() == ADMIN_EMAIL.strip().lower():
+                if st.session_state.role == Role.Admin:
                     st.session_state.admin_authenticated = True
                 st.session_state.auth_email = email_req.strip().lower()
                 st.rerun()
@@ -69,13 +72,13 @@ def code_section(email_req: str | None):
                 st.error(config['texts'][st.session_state.language]['login']['invalid_code_and_attempts'])
 
 
-def mail_section() -> str | None:
+def mail_section(role: str) -> str | None:
     st.subheader(config['texts'][st.session_state.language]['login']['login_header'])
     email_req = st.text_input(config['texts'][st.session_state.language]['login']['mail_input_label'],
                               placeholder=config['texts'][st.session_state.language]['login']['mail_placeholder'],
                               disabled=st.session_state.otp)
     if st.button(config['texts'][st.session_state.language]['login']['send_code_button'], use_container_width=True):
-        st.session_state.user_exists = check_existing_user(email=email_req)
+        st.session_state.user_exists = check_existing_user(email=email_req, role= role)
         if st.session_state.user_exists:
             try:
                 st.session_state.login_mail = email_req.strip().lower()
@@ -133,3 +136,6 @@ def init_session_states():
 
     if "role" not in st.session_state:
         st.session_state.role = None
+
+    if "admin_registration" not in st.session_state:
+        st.session_state.admin_registration = False
