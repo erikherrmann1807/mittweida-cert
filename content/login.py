@@ -4,19 +4,54 @@ from src.auth.otp_mail.config import ADMIN_EMAIL
 from src.auth.otp_mail.login_code import request_login_code, verify_login_code
 from src.database.init_database import init_database
 from src.database.operations import check_existing_user
-from util import get_config
+from util import get_config, get_lang_options, Role
 
 config = get_config()
 
 def login_gate():
     init_database()
-    init_session_states()
 
     if not st.session_state.auth_email and not st.session_state.admin_authenticated:
         with st.container(border=True):
             email_req = mail_section()
             code_section(email_req)
         st.stop()
+
+def language_section():
+    @st.dialog(" ", dismissible=False)
+    def language_dialog():
+        #with st.container(border=True):
+        locale = st.radio(label_visibility="hidden", label="", options=list(get_lang_options().keys()))
+        st.session_state.language = locale.lower()
+        if st.button(config['texts'][st.session_state.language]['login']['language_selection']):
+            st.session_state.language_set = True
+            st.rerun()
+    language_dialog()
+
+
+def role_selection():
+    @st.dialog(" ", dismissible=False)
+    def role_dialog():
+        role_columns = st.columns(3)
+        with role_columns[0]:
+            with st.container(border=True):
+                st.image(image="assets/images/dummy_image.png")
+                if st.button(label="Als User anmelden", key="user_login"):
+                    st.session_state.role = Role.User
+                    st.rerun()
+        with role_columns[1]:
+            with st.container(border=True):
+                st.image(image="assets/images/dummy_image.png")
+                if st.button(label="Als Admin anmelden", key="admin_login"):
+                    st.session_state.role = Role.Admin
+                    st.rerun()
+        with role_columns[2]:
+            with st.container(border=True):
+                st.image(image="assets/images/dummy_image.png")
+                if st.button(label="Als Admin registrieren", key="admin_registration"):
+                    st.rerun()
+
+    role_dialog()
 
 
 def code_section(email_req: str | None):
@@ -88,3 +123,12 @@ def init_session_states():
 
     if "success_message" not in st.session_state:
         st.session_state.success = None
+
+    if "language" not in st.session_state:
+        st.session_state.language = "german"
+
+    if "language_set" not in st.session_state:
+        st.session_state.language_set = False
+
+    if "role" not in st.session_state:
+        st.session_state.role = None
