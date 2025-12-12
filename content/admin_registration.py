@@ -8,6 +8,7 @@ config = get_config()
 
 
 def admin_registration():
+    #TODO: Add email regex
     admin_registration_cfg = config['texts'][st.session_state.language]['admin_registration']
     st.write(admin_registration_cfg['header'])
     with st.form(key="admin_registration_form"):

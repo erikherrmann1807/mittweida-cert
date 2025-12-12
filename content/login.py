@@ -99,6 +99,7 @@ def code_section(email_req: str | None):
 
 
 def mail_section(role: str) -> str | None:
+    # TODO: Add email regex
     st.subheader(config['texts'][st.session_state.language]['login']['login_header'])
     email_req = st.text_input(config['texts'][st.session_state.language]['login']['mail_input_label'],
                               placeholder=config['texts'][st.session_state.language]['login']['mail_placeholder'],
