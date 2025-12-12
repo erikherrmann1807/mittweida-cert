@@ -1,7 +1,5 @@
 import streamlit as st
-from streamlit import container
 
-from src.auth.otp_mail.config import ADMIN_EMAIL
 from src.auth.otp_mail.login_code import request_login_code, verify_login_code
 from src.database.init_database import init_database
 from src.database.operations import check_existing_user
@@ -26,6 +24,35 @@ def language_section():
         if st.button(config['texts'][st.session_state.language]['login']['language_selection']):
             st.session_state.language_set = True
             st.rerun()
+
+
+def role_selection():
+    role_selection_cfg = config['texts'][st.session_state.language]['role_selection']
+    @st.dialog(" ", dismissible=False)
+    def role_dialog():
+        role_columns = st.columns(3)
+        with role_columns[0]:
+            with st.container(border=True):
+                st.image(image="assets/images/dummy_image.png")
+                if st.button(label=role_selection_cfg['user_login'], key="user_login"):
+                    st.session_state.role = Role.User
+                    st.rerun()
+        with role_columns[1]:
+            with st.container(border=True):
+                st.image(image="assets/images/dummy_image.png")
+                if st.button(label=role_selection_cfg['admin_login'], key="admin_login"):
+                    st.session_state.role = Role.Admin
+                    st.rerun()
+        with role_columns[2]:
+            with st.container(border=True):
+                st.image(image="assets/images/dummy_image.png")
+                if st.button(label=role_selection_cfg['admin_registration'], key="register_admin"):
+                    st.session_state.role = Role.Registration
+                    st.rerun()
+
+        st.stop()
+
+    role_dialog()
 
 
 def code_section(email_req: str | None):
