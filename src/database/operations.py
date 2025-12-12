@@ -1,6 +1,7 @@
 import pandas as pd
 
 from src.database.init_database import postgres
+from util import Role
 
 
 def set_alias_email(main_email: str, alias_email: str):
@@ -14,19 +15,47 @@ def set_alias_email(main_email: str, alias_email: str):
             )
 
 
-def check_existing_user(email: str):
+def check_existing_user(email: str, role: str):
+    with postgres() as con:
+        with con.cursor() as cur:
+            if role == Role.User:
+                cur.execute(
+                    """
+                    SELECT 1 FROM users WHERE main_email = %s OR alias_email = %s
+                    """,
+                    (email, email)
+                )
+                user = cur.fetchone()
+                if user:
+                    return True
+
+            if role == Role.Admin or role == Role.Registration:
+                cur.execute(
+                    """
+                    SELECT 1
+                    FROM admins
+                    WHERE email = %s
+                    """,
+                    (email,)
+                )
+                admin = cur.fetchone()
+                if admin:
+                    return True
+        return False
+
+
+def create_admin(name: str, email: str, affiliation: str):
+    #TODO: Handle on conflict for already existing email
     with postgres() as con:
         with con.cursor() as cur:
             cur.execute(
                 """
-                SELECT 1 FROM users WHERE main_email = %s OR alias_email = %s
+                INSERT INTO admins (name, email, affiliation, created_at)
+                VALUES (%s, %s, %s, NOW())
+                ON CONFLICT (email) DO NOTHING;
                 """,
-                (email, email)
+                (name, email, affiliation)
             )
-            user = cur.fetchone()
-            if user:
-                return True
-        return False
 
 def get_or_create_user_id(cur, main_email, alias_email):
     cur.execute(

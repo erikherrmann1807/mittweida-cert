@@ -1,9 +1,11 @@
 import streamlit as st
 
 from content.admin_content import admin_content
-from content.login import login_gate, language_section, init_session_states
+from content.admin_registration import admin_registration
+from content.login import role_selection
+from content.login import login_gate, language_section
 from content.user_content import user_content
-from util import get_config
+from util import get_config, Role, init_session_states
 
 config = get_config()
 
@@ -15,7 +17,15 @@ if not st.session_state.language_set:
     language_section()
 
 if st.session_state.language_set:
-    login_gate()
+
+    if not st.session_state.role:
+        role_selection()
+
+    if st.session_state.role == Role.Registration:
+        admin_registration()
+
+    if st.session_state.role == Role.User or st.session_state.role == Role.Admin:
+        login_gate(st.session_state.role)
 
     if st.session_state.admin_authenticated:
         admin_content()
