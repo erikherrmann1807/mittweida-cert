@@ -3,6 +3,7 @@ import json
 import os
 import secrets
 import string
+import streamlit as st
 from pathlib import Path
 
 from enum import Enum
@@ -105,4 +106,47 @@ def t(path: str | list[str], **kwargs) -> str:
         return f"[missing placeholder '{missing}' in '{path}']"
 
 
-Role = Enum('Role', ['User', 'Admin'])
+Role = Enum('Role', ['User', 'Admin', 'Registration'])
+
+def init_session_states():
+    if "admin_authenticated" not in st.session_state:
+        st.session_state.admin_authenticated = False
+
+    if "auth_email" not in st.session_state:
+        st.session_state.auth_email = None
+
+    if "user_exists" not in st.session_state:
+        st.session_state.user_exists = False
+
+    if "login_mail" not in st.session_state:
+        st.session_state.login_mail = None
+
+    if "login_hash_code" not in st.session_state:
+        st.session_state.login_hash_code = None
+
+    if "code_created_at" not in st.session_state:
+        st.session_state.code_created_at = None
+
+    if "code_expired_at" not in st.session_state:
+        st.session_state.code_expired_at = None
+
+    if "login_attempts" not in st.session_state:
+        st.session_state.login_attempts = 0
+
+    if "code_last_sent_at" not in st.session_state:
+        st.session_state.code_last_sent_at = None
+
+    if "otp" not in st.session_state:
+        st.session_state.otp = False
+
+    if "success_message" not in st.session_state:
+        st.session_state.success = None
+
+    if "language" not in st.session_state:
+        st.session_state.language = "german"
+
+    if "language_set" not in st.session_state:
+        st.session_state.language_set = False
+
+    if "role" not in st.session_state:
+        st.session_state.role = None

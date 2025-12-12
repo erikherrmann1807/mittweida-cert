@@ -21,7 +21,6 @@ def login_gate(role: str):
 def language_section():
     @st.dialog(" ", dismissible=False)
     def language_dialog():
-        #with st.container(border=True):
         locale = st.radio(label_visibility="hidden", label="", options=list(get_lang_options().keys()))
         st.session_state.language = locale.lower()
         if st.button(config['texts'][st.session_state.language]['login']['language_selection']):
@@ -50,7 +49,7 @@ def role_selection():
             with st.container(border=True):
                 st.image(image="assets/images/dummy_image.png")
                 if st.button(label="Als Admin registrieren", key="register_admin"):
-                    st.session_state.admin_registration = True
+                    st.session_state.role = Role.Registration
                     st.rerun()
 
         st.stop()
@@ -92,50 +91,3 @@ def mail_section(role: str) -> str | None:
     if st.session_state.get("success_message"):
         st.success(st.session_state.success_message)
     return email_req
-
-
-def init_session_states():
-    if "admin_authenticated" not in st.session_state:
-        st.session_state.admin_authenticated = False
-
-    if "auth_email" not in st.session_state:
-        st.session_state.auth_email = None
-
-    if "user_exists" not in st.session_state:
-        st.session_state.user_exists = False
-
-    if "login_mail" not in st.session_state:
-        st.session_state.login_mail = None
-
-    if "login_hash_code" not in st.session_state:
-        st.session_state.login_hash_code = None
-
-    if "code_created_at" not in st.session_state:
-        st.session_state.code_created_at = None
-
-    if "code_expired_at" not in st.session_state:
-        st.session_state.code_expired_at = None
-
-    if "login_attempts" not in st.session_state:
-        st.session_state.login_attempts = 0
-
-    if "code_last_sent_at" not in st.session_state:
-        st.session_state.code_last_sent_at = None
-
-    if "otp" not in st.session_state:
-        st.session_state.otp = False
-
-    if "success_message" not in st.session_state:
-        st.session_state.success = None
-
-    if "language" not in st.session_state:
-        st.session_state.language = "german"
-
-    if "language_set" not in st.session_state:
-        st.session_state.language_set = False
-
-    if "role" not in st.session_state:
-        st.session_state.role = None
-
-    if "admin_registration" not in st.session_state:
-        st.session_state.admin_registration = False

@@ -29,7 +29,7 @@ def check_existing_user(email: str, role: str):
                 if user:
                     return True
 
-            if role == Role.Admin:
+            if role == Role.Admin or role == Role.Registration:
                 cur.execute(
                     """
                     SELECT 1
