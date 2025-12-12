@@ -36,12 +36,3 @@ def init_database():
                     user_id serial constraint certificates_users_id_fk references public.users
                 );
             """)
-
-            cur.execute(
-                """
-                INSERT INTO users (main_email, alias_email, created_at)
-                VALUES (%s, %s, NOW())
-                ON CONFLICT (main_email) DO NOTHING;
-                """,
-                ('admin@example.com', None)
-            )
