@@ -33,7 +33,7 @@ def check_existing_user(email: str, role: str):
                 cur.execute(
                     """
                     SELECT 1
-                    FROM admin
+                    FROM admins
                     WHERE email = %s
                     """,
                     (email,)
