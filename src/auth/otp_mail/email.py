@@ -29,11 +29,61 @@ def build_message(to_email: str, code: str) -> EmailMessage:
     msg.add_alternative(html, subtype="html")
     return msg
 
+def build_admin_registration_message(to_email: str, email: str, name: str, affiliation: str):
+    plain = (
+        f"{name} beantragt einen Admin Zugriff\n\n"
+        f"Eckdaten:\n\n"
+        f"- Name: {name}\n\n"
+        f"- Email: {email}\n\n"
+        f"- Zugehörigkeit: {affiliation}\n\n"
+    )
+    html = f"""
+        <html><body style="font-family:Arial, sans-serif;">
+          <h2>{name} beantragt einen Admin Zugriff</h2>
+          <p style="font-size:16px">Eckdaten:
+          <hr/>
+          <p>Name: {name}</p>
+          <p>Email: {email}</p>
+          <p>Zugehörigkeit: {affiliation}</p>
+          <hr/>
+        </body></html>
+        """
+
+    msg = EmailMessage()
+    msg["Subject"] = f"Admin Registrierung für {name}"
+    msg["From"] = SMTP_FROM
+    msg["To"] = to_email
+    msg.set_content(plain)
+    msg.add_alternative(html, subtype="html")
+    return msg
+
+
 
 def send_mail_code(to_email: str, code: str):
     msg = build_message(to_email, code)
     context = ssl.create_default_context()
 
+    if USE_STARTTLS:
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as s:
+            s.ehlo()
+            s.starttls(context=context)
+            s.ehlo()
+            if SMTP_USER:
+                s.login(SMTP_USER, SMTP_PASS)
+            s.send_message(msg)
+    else:
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as s:
+            s.ehlo()
+            if SMTP_USER:
+                try:
+                    s.login(SMTP_USER, SMTP_PASS)
+                except smtplib.SMTPNotSupportedError:
+                    pass
+            s.send_message(msg)
+
+def send_admin_registration_mail(to_email: str, email: str, name: str, affiliation: str):
+    msg = build_admin_registration_message(to_email, email, name, affiliation)
+    context = ssl.create_default_context()
     if USE_STARTTLS:
         with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as s:
             s.ehlo()

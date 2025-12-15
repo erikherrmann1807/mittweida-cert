@@ -1,8 +1,13 @@
 import hashlib
 import json
 import os
+import re
 import secrets
 import string
+import streamlit as st
+from pathlib import Path
+
+from enum import Enum
 
 from src.auth.otp_mail.config import CODE_LEN
 from src.database.init_database import postgres
@@ -40,7 +45,7 @@ def random_numeric_code(n=CODE_LEN) -> str:
 def hash_code(email: str, code: str) -> str:
     return hashlib.sha256((email + ":" + code).encode("utf-8")).hexdigest()
 
-def get_placeholders(name: str, email: str, course_name: str, platform: str, created_at: str, cert_number: str) -> dict:
+def get_placeholders(name: str, email: str, course_name: str, platform: str, created_at: str, cert_number: str, institution: str) -> dict:
     placeholders = {
         "{{name}}": name,
         "{{email}}": email,
@@ -48,8 +53,8 @@ def get_placeholders(name: str, email: str, course_name: str, platform: str, cre
         "{{platform}}": platform,
         "{{created_at}}": created_at,
         "{{cert_number}}": cert_number,
+        "{{institution}}": institution,
     }
-
     return placeholders
 
 
@@ -57,3 +62,96 @@ def get_config():
     with open(os.path.join('.streamlit/', 'config.json'), 'r', encoding='utf-8') as config_file:
         config = json.load(config_file)
     return config
+
+def get_dummy_image_path():
+    return "Pictures/100000010000011B0000008ECF685CA0.png"
+
+def get_logo_path():
+    return "logos"
+
+def get_lang_options():
+    lang_options = {
+        "German": "de_DE",
+        "English": "en_US",
+    }
+    return lang_options
+
+strings_path = Path(".streamlit/config.json")
+STRINGS = json.loads(strings_path.read_text(encoding="utf-8"))
+
+def get_from_path(data: dict, path: str | list[str]):
+    if isinstance(path, str):
+        parts = path.split(".")
+    else:
+        parts = path
+
+    node = data
+    for part in parts:
+        node = node[part]
+    return node
+
+
+def t(path: str | list[str], **kwargs) -> str:
+    try:
+        template = get_from_path(STRINGS, path)
+    except KeyError:
+        return f"[missing:{path}]"
+
+    if not isinstance(template, str):
+        return f"[not a string:{path}]"
+
+    try:
+        return template.format(**kwargs)
+    except KeyError as e:
+        missing = e.args[0]
+        return f"[missing placeholder '{missing}' in '{path}']"
+
+
+Role = Enum('Role', ['User', 'Admin', 'Registration'])
+
+def init_session_states():
+    if "admin_authenticated" not in st.session_state:
+        st.session_state.admin_authenticated = False
+
+    if "auth_email" not in st.session_state:
+        st.session_state.auth_email = None
+
+    if "user_exists" not in st.session_state:
+        st.session_state.user_exists = False
+
+    if "login_mail" not in st.session_state:
+        st.session_state.login_mail = None
+
+    if "login_hash_code" not in st.session_state:
+        st.session_state.login_hash_code = None
+
+    if "code_created_at" not in st.session_state:
+        st.session_state.code_created_at = None
+
+    if "code_expired_at" not in st.session_state:
+        st.session_state.code_expired_at = None
+
+    if "login_attempts" not in st.session_state:
+        st.session_state.login_attempts = 0
+
+    if "code_last_sent_at" not in st.session_state:
+        st.session_state.code_last_sent_at = None
+
+    if "otp" not in st.session_state:
+        st.session_state.otp = False
+
+    if "success_message" not in st.session_state:
+        st.session_state.success = None
+
+    if "language" not in st.session_state:
+        st.session_state.language = "german"
+
+    if "language_set" not in st.session_state:
+        st.session_state.language_set = False
+
+    if "role" not in st.session_state:
+        st.session_state.role = None
+
+def validate_email(email: str) -> bool:
+    pattern = r"^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
+    return re.match(pattern, email) is not None

@@ -1,6 +1,7 @@
 import pandas as pd
 
 from src.database.init_database import postgres
+from util import Role
 
 
 def set_alias_email(main_email: str, alias_email: str):
@@ -14,19 +15,47 @@ def set_alias_email(main_email: str, alias_email: str):
             )
 
 
-def check_existing_user(email: str):
+def check_existing_user(email: str, role: str):
+    with postgres() as con:
+        with con.cursor() as cur:
+            if role == Role.User:
+                cur.execute(
+                    """
+                    SELECT 1 FROM users WHERE main_email = %s OR alias_email = %s
+                    """,
+                    (email, email)
+                )
+                user = cur.fetchone()
+                if user:
+                    return True
+
+            if role == Role.Admin or role == Role.Registration:
+                cur.execute(
+                    """
+                    SELECT 1
+                    FROM admins
+                    WHERE email = %s
+                    """,
+                    (email,)
+                )
+                admin = cur.fetchone()
+                if admin:
+                    return True
+        return False
+
+
+def create_admin(name: str, email: str, affiliation: str):
+    #TODO: Handle on conflict for already existing email
     with postgres() as con:
         with con.cursor() as cur:
             cur.execute(
                 """
-                SELECT 1 FROM users WHERE main_email = %s OR alias_email = %s
+                INSERT INTO admins (name, email, affiliation, created_at)
+                VALUES (%s, %s, %s, NOW())
+                ON CONFLICT (email) DO NOTHING;
                 """,
-                (email, email)
+                (name, email, affiliation)
             )
-            user = cur.fetchone()
-            if user:
-                return True
-        return False
 
 def get_or_create_user_id(cur, main_email, alias_email):
     cur.execute(
@@ -57,7 +86,7 @@ def get_user(cur, email: str):
     return cur.fetchone()[0]
 
 
-def insert_csv(csv_file, institution, logo):
+def insert_csv(csv_file, institution, logo_path):
     with postgres() as con:
         with con.cursor() as cur:
             df = pd.read_csv(csv_file[0], sep=';')
@@ -70,10 +99,10 @@ def insert_csv(csv_file, institution, logo):
                 user_id = get_or_create_user_id(cur, email, None)
                 cur.execute(
                     """
-                    INSERT INTO certificates (name, email, course_name, platform, created_at, cert_number, institution, user_id, logo) 
+                    INSERT INTO certificates (name, email, course_name, platform, created_at, cert_number, institution, user_id, logo_path) 
                     VALUES (%s, %s, %s, %s, NOW(), %s, %s, %s, %s)
                     """,
-                    (name, email, course_name, platform, cert_number, institution, user_id, logo)
+                    (name, email, course_name, platform, cert_number, institution, user_id, logo_path)
                 )
 
 
@@ -89,3 +118,14 @@ def get_data_per_user(email: str):
             (user_id,)
             )
             return cur.fetchall()
+
+
+def verify_cert(cert_number: str):
+    with postgres() as con:
+        with con.cursor() as cur:
+            cur.execute("""
+                        SELECT * FROM certificates WHERE cert_number = %s
+                        """,
+                        (cert_number,)
+                        )
+            return cur.fetchone()
