@@ -45,14 +45,12 @@ def check_existing_user(email: str, role: str):
 
 
 def create_admin(name: str, email: str, affiliation: str):
-    #TODO: Handle on conflict for already existing email
     with postgres() as con:
         with con.cursor() as cur:
             cur.execute(
                 """
                 INSERT INTO admins (name, email, affiliation, created_at)
                 VALUES (%s, %s, %s, NOW())
-                ON CONFLICT (email) DO NOTHING;
                 """,
                 (name, email, affiliation)
             )

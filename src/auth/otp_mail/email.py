@@ -1,8 +1,8 @@
 import smtplib
-import ssl
 from email.message import EmailMessage
 
 from src.auth.otp_mail.config import *
+from util import get_mail_context
 
 
 def build_message(to_email: str, code: str) -> EmailMessage:
@@ -57,33 +57,40 @@ def build_admin_registration_message(to_email: str, email: str, name: str, affil
     msg.add_alternative(html, subtype="html")
     return msg
 
+def build_admin_confirmation_message(to_email):
+    plain = (
+        f"Ihr Antrag auf Admin Zugriff wird hiermit bestätigt\n\n"
+    )
+    html = f"""
+            <html><body style="font-family:Arial, sans-serif;">
+              <h2>Ihr Antrag auf Admin Zugriff wird hiermit bestätigt</h2>
+            </body></html>
+            """
 
+    msg = EmailMessage()
+    msg["Subject"] = f"Freischaltung Admin Zugriff"
+    msg["From"] = SMTP_FROM
+    msg["To"] = to_email
+    msg.set_content(plain)
+    msg.add_alternative(html, subtype="html")
+    return msg
 
 def send_mail_code(to_email: str, code: str):
     msg = build_message(to_email, code)
-    context = ssl.create_default_context()
-
-    if USE_STARTTLS:
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as s:
-            s.ehlo()
-            s.starttls(context=context)
-            s.ehlo()
-            if SMTP_USER:
-                s.login(SMTP_USER, SMTP_PASS)
-            s.send_message(msg)
-    else:
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as s:
-            s.ehlo()
-            if SMTP_USER:
-                try:
-                    s.login(SMTP_USER, SMTP_PASS)
-                except smtplib.SMTPNotSupportedError:
-                    pass
-            s.send_message(msg)
+    mail_setup(msg)
 
 def send_admin_registration_mail(to_email: str, email: str, name: str, affiliation: str):
     msg = build_admin_registration_message(to_email, email, name, affiliation)
-    context = ssl.create_default_context()
+    mail_setup(msg)
+
+
+def send_admin_confirmation_mail(to_email: str):
+    msg = build_admin_confirmation_message(to_email)
+    mail_setup(msg)
+
+
+def mail_setup(msg: EmailMessage):
+    context = get_mail_context()
     if USE_STARTTLS:
         with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as s:
             s.ehlo()

@@ -3,6 +3,7 @@ import json
 import os
 import re
 import secrets
+import ssl
 import string
 import streamlit as st
 from pathlib import Path
@@ -155,3 +156,7 @@ def init_session_states():
 def validate_email(email: str) -> bool:
     pattern = r"^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
     return re.match(pattern, email) is not None
+
+def get_mail_context():
+    context = ssl.create_default_context()
+    return context
