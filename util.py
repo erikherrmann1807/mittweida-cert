@@ -1,6 +1,7 @@
 import hashlib
 import json
 import os
+import re
 import secrets
 import string
 import streamlit as st
@@ -150,3 +151,7 @@ def init_session_states():
 
     if "role" not in st.session_state:
         st.session_state.role = None
+
+def validate_email(email: str) -> bool:
+    pattern = r"^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
+    return re.match(pattern, email) is not None

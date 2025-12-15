@@ -3,7 +3,7 @@ import streamlit as st
 from src.auth.otp_mail.login_code import request_login_code, verify_login_code
 from src.database.init_database import init_database
 from src.database.operations import check_existing_user
-from util import get_config, get_lang_options, Role
+from util import get_config, get_lang_options, Role, validate_email
 
 config = get_config()
 
@@ -25,34 +25,6 @@ def language_section():
             st.session_state.language_set = True
             st.rerun()
     language_dialog()
-
-
-def role_selection():
-    @st.dialog(" ", dismissible=False)
-    def role_dialog():
-        role_columns = st.columns(3)
-        with role_columns[0]:
-            with st.container(border=True):
-                st.image(image="assets/images/dummy_image.png")
-                if st.button(label="Als User anmelden", key="user_login"):
-                    st.session_state.role = Role.User
-                    st.rerun()
-        with role_columns[1]:
-            with st.container(border=True):
-                st.image(image="assets/images/dummy_image.png")
-                if st.button(label="Als Admin anmelden", key="admin_login"):
-                    st.session_state.role = Role.Admin
-                    st.rerun()
-        with role_columns[2]:
-            with st.container(border=True):
-                st.image(image="assets/images/dummy_image.png")
-                if st.button(label="Als Admin registrieren", key="register_admin"):
-                    st.session_state.role = Role.Registration
-                    st.rerun()
-
-        st.stop()
-
-    role_dialog()
 
 
 def role_selection():
@@ -99,12 +71,15 @@ def code_section(email_req: str | None):
 
 
 def mail_section(role: str) -> str | None:
-    # TODO: Add email regex
     st.subheader(config['texts'][st.session_state.language]['login']['login_header'])
     email_req = st.text_input(config['texts'][st.session_state.language]['login']['mail_input_label'],
                               placeholder=config['texts'][st.session_state.language]['login']['mail_placeholder'],
                               disabled=st.session_state.otp)
+
     if st.button(config['texts'][st.session_state.language]['login']['send_code_button'], use_container_width=True):
+        if not validate_email(email_req):
+            st.error(config['texts'][st.session_state.language]['login']['invalid_mail'])
+            return None
         st.session_state.user_exists = check_existing_user(email=email_req, role= role)
         if st.session_state.user_exists:
             try:
