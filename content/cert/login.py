@@ -1,14 +1,12 @@
 import streamlit as st
 
 from src.auth.otp_mail.login_code import request_login_code, verify_login_code
-from src.database.init_database import init_database
 from src.database.operations import check_existing_user
 from util import get_config, get_lang_options, Role, validate_email
 
 config = get_config()
 
 def login_gate(role: str):
-    init_database()
 
     if not st.session_state.auth_email and not st.session_state.admin_authenticated:
         with st.container(border=True):

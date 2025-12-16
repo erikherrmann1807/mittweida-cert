@@ -2,7 +2,7 @@ import os
 
 import streamlit as st
 
-from src.database.operations import insert_csv
+from src.database.operations import insert_csv, apply_certificate_editor_changes, get_data_per_admin
 from util import get_config, get_logo_path
 
 config = get_config()
@@ -23,7 +23,7 @@ def admin_content():
             with open(logo_path, "wb") as file:
                 file.write(uploaded_logo.getbuffer())
             if institution and uploaded_file:
-                insert_csv(uploaded_file, institution, logo_path)
+                insert_csv(uploaded_file, institution, logo_path, st.session_state.auth_email)
                 st.success(admin_cfg['upload_success'])
             else:
                 st.warning(admin_cfg['upload_warning'])

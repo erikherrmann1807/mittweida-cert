@@ -4,11 +4,14 @@ from content.cert.admin_content import admin_content
 from content.cert.admin_registration import admin_registration
 from content.cert.login import language_section, role_selection, login_gate
 from content.cert.user_content import user_content
+from src.database.init_database import init_database
 from util import get_config, init_session_states, Role
 
 config = get_config()
 
 init_session_states()
+
+init_database()
 
 st.set_page_config(page_title=config['texts'][st.session_state.language]['general']['cert_name'], page_icon="🎓")
 
