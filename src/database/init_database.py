@@ -17,11 +17,22 @@ def init_database():
             cur.execute("""
                 create table if not exists public.users (
                     id serial primary key,
-                    main_email  varchar(255) constraint users_pk unique,
-                    alias_email varchar(255) constraint users_pk_2 unique,
+                    main_email  varchar(255) unique,
+                    alias_email varchar(255) unique,
                     created_at  timestamp default now()
                 );
             """)
+
+            cur.execute("""
+                create table if not exists public.admins (
+                    id serial primary key,
+                    name varchar(255),
+                    email  varchar(255) unique,
+                    affiliation varchar(255),
+                    created_at  timestamp default now()
+                );
+            """)
+
             cur.execute("""
                 create table if not exists public.certificates (
                     id serial primary key,
@@ -33,6 +44,16 @@ def init_database():
                     cert_number varchar(255),
                     institution varchar(255),
                     logo_path varchar(255),
-                    user_id serial constraint certificates_users_id_fk references public.users
+
+                    user_id  integer,
+                    admin_id integer,
+
+                    constraint certificates_users_id_fk
+                        foreign key (user_id) references public.users(id),
+
+                    constraint certificates_admins_id_fk
+                        foreign key (admin_id) references public.admins(id)
                 );
             """)
+
+        con.commit()
