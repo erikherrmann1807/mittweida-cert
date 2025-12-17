@@ -31,7 +31,7 @@ def display_certs(certs_per_row: int, rows: list[list[tuple[Any, ...]]]):
             for idx, cert in enumerate(row):
                 with cert_columns[idx]:
                     with st.container(border=True, height=320, vertical_alignment="distribute"):
-                        cert_id, name, email, course_name, platform, created_at, cert_number, institution, logo_path, user_id = cert
+                        cert_id, name, email, course_name, platform, created_at, cert_number, institution, logo_path, user_id, admin_id = cert
                         date = format_date(created_at, locale='de_DE')
                         st.markdown(f"#### {course_name}")
                         st.markdown(f"{cert_cfg['name']} {name}")
