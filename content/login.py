@@ -9,7 +9,6 @@ config = get_config()
 
 def login_gate(role: str):
     init_database()
-
     if not st.session_state.auth_email and not st.session_state.admin_authenticated:
         with st.container(border=True):
             email_req = mail_section(role=role)
@@ -64,6 +63,8 @@ def code_section(email_req: str | None):
             if verify_login_code(email_req, code_input):
                 if st.session_state.role == Role.Admin:
                     st.session_state.admin_authenticated = True
+                elif st.session_state.role == Role.User:
+                    st.session_state.user_authenticated = True
                 st.session_state.auth_email = email_req.strip().lower()
                 st.rerun()
             else:
@@ -91,6 +92,6 @@ def mail_section(role: str) -> str | None:
             st.rerun()
         else:
             st.error(config['texts'][st.session_state.language]['login']['user_not_existing'])
-    if st.session_state.get("success_message"):
+    if st.session_state.otp:
         st.success(st.session_state.success_message)
     return email_req

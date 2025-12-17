@@ -113,6 +113,9 @@ def init_session_states():
     if "admin_authenticated" not in st.session_state:
         st.session_state.admin_authenticated = False
 
+    if "user_authenticated" not in st.session_state:
+        st.session_state.user_authenticated = False
+
     if "auth_email" not in st.session_state:
         st.session_state.auth_email = None
 
@@ -152,6 +155,17 @@ def init_session_states():
     if "role" not in st.session_state:
         st.session_state.role = None
 
+    if "selected_page_prev" not in st.session_state:
+        st.session_state.selected_page_prev = None
+
 def validate_email(email: str) -> bool:
     pattern = r"^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
     return re.match(pattern, email) is not None
+
+def reset_login(role: str):
+    st.session_state.otp = False
+    st.session_state.auth_email = None
+    if role == Role.User:
+        st.session_state.admin_authenticated = False
+    elif role == Role.Admin:
+        st.session_state.user_authenticated = False
