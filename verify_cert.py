@@ -2,7 +2,7 @@ import streamlit as st
 
 from content.cert.login import language_section
 from content.verify_cert.user_content import user_content
-from util import get_config, t, init_session_states
+from util import get_config, init_session_states
 
 init_session_states()
 

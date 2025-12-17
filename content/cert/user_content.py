@@ -61,7 +61,9 @@ def cert_filter_options() -> tuple[Any | None, Any | None, str | None]:
     filter_cfg = config['texts'][st.session_state.language]['user_content']['filter_options']
     st.markdown(filter_cfg['filter_caption'], unsafe_allow_html=True)
     search_query = st.text_input(filter_cfg['filter_search'],
-                                 placeholder=config['texts'][st.session_state.language]['user_content']['filter_options']['filter_placeholder'],
+                                 placeholder=
+                                 config['texts'][st.session_state.language]['user_content']['filter_options'][
+                                     'filter_placeholder'],
                                  key="search")
 
     if search_query:
@@ -70,7 +72,7 @@ def cert_filter_options() -> tuple[Any | None, Any | None, str | None]:
     year_column, platform_column = st.columns([1, 1])
     with year_column:
         selected_year = st.selectbox(filter_cfg['year_dropdown_label'],
-        filter_cfg['year_dropdown_values'])
+                                     filter_cfg['year_dropdown_values'])
     with platform_column:
         selected_platform = st.selectbox(filter_cfg['platform_dropdown_label'], filter_cfg['platform_dropdown_values'])
     return search_query, selected_platform, selected_year
@@ -82,14 +84,18 @@ def verify_and_alias():
         with header_column.container(vertical_alignment="distribute"):
             st.markdown(config['texts'][st.session_state.language]['user_content']['verify_alias_header'],
                         unsafe_allow_html=True)
-            alternate_email = st.text_input(config['texts'][st.session_state.language]['user_content']['alternative_mail']['label'], value="", key="alternative_email",
-                                            help=config['texts'][st.session_state.language]['user_content']['alternative_mail']['help'])
+            alternate_email = st.text_input(
+                config['texts'][st.session_state.language]['user_content']['alternative_mail']['label'], value="",
+                key="alternative_email",
+                help=config['texts'][st.session_state.language]['user_content']['alternative_mail']['help'])
             if alternate_email:
                 set_alias_email(main_email=st.session_state.auth_email, alias_email=alternate_email)
                 st.success(config['texts'][st.session_state.language]['user_content']['alternative_mail']['success'])
         try:
             qr_image = Image.open(os.path.join('assets', 'images/qrcode_verify_cert.png'))
-            qrcode_column.image(qr_image, caption=config['texts'][st.session_state.language]['user_content']['qrcode_caption'], width='stretch')
+            qrcode_column.image(qr_image,
+                                caption=config['texts'][st.session_state.language]['user_content']['qrcode_caption'],
+                                width='stretch')
         except FileNotFoundError:
             qrcode_column.write("")
 
@@ -127,10 +133,10 @@ def download_dialog(name: str, email: str, course_name: str, platform: str, crea
 
             st.write(download_cfg['generating_success'])
             if st.download_button(
-                download_cfg['download_button'],
-                data=pdf,
-                file_name=f"Zertifikat-{name}-{course_name}.pdf",
-                mime="application/pdf"
+                    download_cfg['download_button'],
+                    data=pdf,
+                    file_name=f"Zertifikat-{name}-{course_name}.pdf",
+                    mime="application/pdf"
             ):
                 st.rerun()
 

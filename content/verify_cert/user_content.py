@@ -5,8 +5,6 @@ from src.database.operations import verify_cert
 from util import t
 
 
-
-
 def user_content(config):
     st.title("Mittweida Certificate Verification")
     with st.container(border=True):
