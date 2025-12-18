@@ -61,7 +61,7 @@ def create_admin(name: str, email: str, affiliation: str):
             )
 
 
-def get_or_create_user_id(cur, main_email, alias_email):
+def get_or_create_user_id(cur, main_email):
     cur.execute(
         "SELECT id FROM users WHERE main_email = %s",
         (main_email,)
@@ -73,10 +73,10 @@ def get_or_create_user_id(cur, main_email, alias_email):
 
     cur.execute(
         """
-        INSERT INTO users (main_email, alias_email, created_at)
-        VALUES (%s, %s, NOW()) RETURNING id;
+        INSERT INTO users (main_email, created_at)
+        VALUES (%s, NOW()) RETURNING id;
         """,
-        (main_email, alias_email)
+        (main_email,)
     )
     return cur.fetchone()[0]
 
@@ -110,7 +110,7 @@ def insert_csv(csv_file, institution, logo_path, admin_mail):
                 course_name = row['course_name']
                 platform = row['platform']
                 cert_number = row['cert_number']
-                user_id = get_or_create_user_id(cur, email, None)
+                user_id = get_or_create_user_id(cur, email)
                 admin_id = get_admin_id(cur, admin_mail)
                 cur.execute(
                     """
@@ -364,7 +364,35 @@ def apply_certificate_editor_changes(admin_mail: str, edited_df: pd.DataFrame, o
                     cert_id = int(row["id"])
 
                     email = _none_if_nan(row.get("email"))
-                    user_id = get_or_create_user_id(cur, email, None)
+
+                    cur.execute(
+                        "SELECT user_id FROM certificates WHERE id = %s",
+                        (cert_id,)
+                    )
+                    existing_user_row = cur.fetchone()
+
+                    if existing_user_row and existing_user_row[0] is not None:
+                        user_id = existing_user_row[0]
+
+                        if email is not None:
+                            cur.execute(
+                                """
+                                UPDATE users
+                                SET main_email = %s
+                                WHERE id = %s
+                                """,
+                                (email, user_id)
+                            )
+                            cur.execute(
+                                """
+                                UPDATE certificates
+                                SET email = %s
+                                WHERE user_id = %s
+                                """,
+                                (email, user_id)
+                            )
+                    else:
+                        user_id = get_or_create_user_id(cur, email)
 
                     sets = []
                     values = []
@@ -391,7 +419,7 @@ def apply_certificate_editor_changes(admin_mail: str, edited_df: pd.DataFrame, o
             if not inserts_df.empty:
                 for _, row in inserts_df.iterrows():
                     email = _none_if_nan(row.get("email"))
-                    user_id = get_or_create_user_id(cur, email, None)
+                    user_id = get_or_create_user_id(cur, email)
 
                     cur.execute(
                         """
