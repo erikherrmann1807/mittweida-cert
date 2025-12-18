@@ -17,13 +17,13 @@ def admin_registration():
         if st.form_submit_button(admin_registration_cfg['submit_button']):
             if check_existing_user(email=email_query, role=st.session_state.role):
                 st.error(admin_registration_cfg['error_email'])
+            elif not name_query or not email_query or not affiliation_query:
+                st.error(admin_registration_cfg['error_form'])
             elif not validate_email(email=email_query):
                 st.error(admin_registration_cfg['not_email'])
-            elif name_query and email_query and affiliation_query:
+            else:
                 send_admin_registration_mail(admin_registration_cfg['system_admin_email'], email=email_query,
                                              name=name_query, affiliation=affiliation_query)
                 st.success(admin_registration_cfg['success_registration'])
-            else:
-                st.error(admin_registration_cfg['error_form'])
 
     st.stop()

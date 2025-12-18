@@ -29,6 +29,7 @@ def build_message(to_email: str, code: str) -> EmailMessage:
     msg.add_alternative(html, subtype="html")
     return msg
 
+
 def build_admin_registration_message(to_email: str, email: str, name: str, affiliation: str):
     plain = (
         f"{name} beantragt einen Admin Zugriff\n\n"
@@ -57,6 +58,7 @@ def build_admin_registration_message(to_email: str, email: str, name: str, affil
     msg.add_alternative(html, subtype="html")
     return msg
 
+
 def build_admin_confirmation_message(to_email):
     plain = (
         f"Ihr Antrag auf Admin Zugriff wird hiermit bestätigt\n\n"
@@ -75,9 +77,11 @@ def build_admin_confirmation_message(to_email):
     msg.add_alternative(html, subtype="html")
     return msg
 
+
 def send_mail_code(to_email: str, code: str):
     msg = build_message(to_email, code)
     mail_setup(msg)
+
 
 def send_admin_registration_mail(to_email: str, email: str, name: str, affiliation: str):
     msg = build_admin_registration_message(to_email, email, name, affiliation)
