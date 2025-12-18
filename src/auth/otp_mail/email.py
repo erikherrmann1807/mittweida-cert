@@ -1,8 +1,8 @@
 import smtplib
-import ssl
 from email.message import EmailMessage
 
 from src.auth.otp_mail.config import *
+from util import get_mail_context
 
 
 def build_message(to_email: str, code: str) -> EmailMessage:
@@ -30,10 +30,71 @@ def build_message(to_email: str, code: str) -> EmailMessage:
     return msg
 
 
+def build_admin_registration_message(to_email: str, email: str, name: str, affiliation: str):
+    plain = (
+        f"{name} beantragt einen Admin Zugriff\n\n"
+        f"Eckdaten:\n\n"
+        f"- Name: {name}\n\n"
+        f"- Email: {email}\n\n"
+        f"- Zugehörigkeit: {affiliation}\n\n"
+    )
+    html = f"""
+        <html><body style="font-family:Arial, sans-serif;">
+          <h2>{name} beantragt einen Admin Zugriff</h2>
+          <p style="font-size:16px">Eckdaten:
+          <hr/>
+          <p>Name: {name}</p>
+          <p>Email: {email}</p>
+          <p>Zugehörigkeit: {affiliation}</p>
+          <hr/>
+        </body></html>
+        """
+
+    msg = EmailMessage()
+    msg["Subject"] = f"Admin Registrierung für {name}"
+    msg["From"] = SMTP_FROM
+    msg["To"] = to_email
+    msg.set_content(plain)
+    msg.add_alternative(html, subtype="html")
+    return msg
+
+
+def build_admin_confirmation_message(to_email):
+    plain = (
+        f"Ihr Antrag auf Admin Zugriff wird hiermit bestätigt\n\n"
+    )
+    html = f"""
+            <html><body style="font-family:Arial, sans-serif;">
+              <h2>Ihr Antrag auf Admin Zugriff wird hiermit bestätigt</h2>
+            </body></html>
+            """
+
+    msg = EmailMessage()
+    msg["Subject"] = f"Freischaltung Admin Zugriff"
+    msg["From"] = SMTP_FROM
+    msg["To"] = to_email
+    msg.set_content(plain)
+    msg.add_alternative(html, subtype="html")
+    return msg
+
+
 def send_mail_code(to_email: str, code: str):
     msg = build_message(to_email, code)
-    context = ssl.create_default_context()
+    mail_setup(msg)
 
+
+def send_admin_registration_mail(to_email: str, email: str, name: str, affiliation: str):
+    msg = build_admin_registration_message(to_email, email, name, affiliation)
+    mail_setup(msg)
+
+
+def send_admin_confirmation_mail(to_email: str):
+    msg = build_admin_confirmation_message(to_email)
+    mail_setup(msg)
+
+
+def mail_setup(msg: EmailMessage):
+    context = get_mail_context()
     if USE_STARTTLS:
         with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as s:
             s.ehlo()

@@ -1,14 +1,15 @@
 import psycopg2
-
 from src.database.database_config import *
 
 
 def postgres():
-    return psycopg2.connect(database=DB,
-                            user=DB_USER,
-                            host=DB_HOST,
-                            password=DB_PASSWORD,
-                            port=DB_PORT)
+    return psycopg2.connect(
+        database=DB,
+        user=DB_USER,
+        host=DB_HOST,
+        password=DB_PASSWORD,
+        port=DB_PORT,
+    )
 
 
 def init_database():
@@ -17,11 +18,22 @@ def init_database():
             cur.execute("""
                 create table if not exists public.users (
                     id serial primary key,
-                    main_email  varchar(255) constraint users_pk unique,
-                    alias_email varchar(255) constraint users_pk_2 unique,
+                    main_email  varchar(255) unique,
+                    alias_email varchar(255) unique,
                     created_at  timestamp default now()
                 );
             """)
+
+            cur.execute("""
+                create table if not exists public.admins (
+                    id serial primary key,
+                    name varchar(255),
+                    email varchar(255) unique,
+                    affiliation varchar(255),
+                    created_at timestamp default now()
+                );
+            """)
+
             cur.execute("""
                 create table if not exists public.certificates (
                     id serial primary key,
@@ -31,15 +43,43 @@ def init_database():
                     platform varchar(255),
                     created_at timestamp default now(),
                     cert_number varchar(255),
-                    user_id serial constraint certificates_users_id_fk references public.users
+                    institution varchar(255),
+                    logo_path varchar(255),
+
+                    user_id  integer,
+                    admin_id integer,
+
+                    constraint certificates_users_id_fk
+                        foreign key (user_id) references public.users(id),
+                    constraint certificates_admins_id_fk
+                        foreign key (admin_id) references public.admins(id)
                 );
             """)
 
-            cur.execute(
-                """
-                INSERT INTO users (main_email, alias_email, created_at)
-                VALUES (%s, %s, NOW())
-                ON CONFLICT (main_email) DO NOTHING;
-                """,
-                ('admin@example.com', None)
-            )
+            cur.execute("""
+                CREATE OR REPLACE FUNCTION sync_user_email_from_cert()
+                RETURNS trigger AS $$
+                BEGIN
+                    IF NEW.email IS DISTINCT FROM OLD.email THEN
+                        UPDATE public.users
+                        SET main_email = NEW.email
+                        WHERE id = NEW.user_id;
+                    END IF;
+                    RETURN NEW;
+                END;
+                $$ LANGUAGE plpgsql;
+            """)
+
+            cur.execute("""
+                DROP TRIGGER IF EXISTS trg_sync_user_email_from_cert
+                ON public.certificates;
+            """)
+
+            cur.execute("""
+                CREATE TRIGGER trg_sync_user_email_from_cert
+                BEFORE UPDATE OF email ON public.certificates
+                FOR EACH ROW
+                EXECUTE FUNCTION sync_user_email_from_cert();
+            """)
+
+        con.commit()
