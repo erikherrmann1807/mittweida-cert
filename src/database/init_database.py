@@ -1,14 +1,15 @@
 import psycopg2
-
 from src.database.database_config import *
 
 
 def postgres():
-    return psycopg2.connect(database=DB,
-                            user=DB_USER,
-                            host=DB_HOST,
-                            password=DB_PASSWORD,
-                            port=DB_PORT)
+    return psycopg2.connect(
+        database=DB,
+        user=DB_USER,
+        host=DB_HOST,
+        password=DB_PASSWORD,
+        port=DB_PORT,
+    )
 
 
 def init_database():
@@ -27,9 +28,9 @@ def init_database():
                 create table if not exists public.admins (
                     id serial primary key,
                     name varchar(255),
-                    email  varchar(255) unique,
+                    email varchar(255) unique,
                     affiliation varchar(255),
-                    created_at  timestamp default now()
+                    created_at timestamp default now()
                 );
             """)
 
@@ -50,10 +51,35 @@ def init_database():
 
                     constraint certificates_users_id_fk
                         foreign key (user_id) references public.users(id),
-
                     constraint certificates_admins_id_fk
                         foreign key (admin_id) references public.admins(id)
                 );
+            """)
+
+            cur.execute("""
+                CREATE OR REPLACE FUNCTION sync_user_email_from_cert()
+                RETURNS trigger AS $$
+                BEGIN
+                    IF NEW.email IS DISTINCT FROM OLD.email THEN
+                        UPDATE public.users
+                        SET main_email = NEW.email
+                        WHERE id = NEW.user_id;
+                    END IF;
+                    RETURN NEW;
+                END;
+                $$ LANGUAGE plpgsql;
+            """)
+
+            cur.execute("""
+                DROP TRIGGER IF EXISTS trg_sync_user_email_from_cert
+                ON public.certificates;
+            """)
+
+            cur.execute("""
+                CREATE TRIGGER trg_sync_user_email_from_cert
+                BEFORE UPDATE OF email ON public.certificates
+                FOR EACH ROW
+                EXECUTE FUNCTION sync_user_email_from_cert();
             """)
 
         con.commit()
