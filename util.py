@@ -168,6 +168,9 @@ def init_session_states():
     if "selected_page_prev" not in st.session_state:
         st.session_state.selected_page_prev = None
 
+    if "verify_counter" not in st.session_state:
+        st.session_state.verify_counter = 0
+
 
 def validate_email(email: str) -> bool:
     pattern = r"^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
@@ -184,3 +187,5 @@ def reset_login():
     st.session_state.auth_email = None
     st.session_state.admin_authenticated = False
     st.session_state.user_authenticated = False
+
+
