@@ -18,7 +18,7 @@ def login_gate(role: str):
 def language_section():
     @st.dialog(" ", dismissible=False)
     def language_dialog():
-        locale = st.radio(label_visibility="hidden", label="", options=list(get_lang_options().keys()))
+        locale = st.radio(label_visibility="hidden", label="Language", options=list(get_lang_options().keys()))
         st.session_state.language = locale.lower()
         if st.button(config['texts'][st.session_state.language]['login']['language_selection']):
             st.session_state.language_set = True
