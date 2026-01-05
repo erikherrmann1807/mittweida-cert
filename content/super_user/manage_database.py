@@ -1,6 +1,5 @@
-import streamlit as st
 import pandas as pd
-
+import streamlit as st
 
 
 def manage_database():
@@ -8,4 +7,4 @@ def manage_database():
 
     df = pd.DataFrame()
 
-    st.dataframe(df, use_container_width=True)
+    st.dataframe(df, width="stretch")
