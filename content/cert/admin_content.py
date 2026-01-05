@@ -36,7 +36,7 @@ def admin_content():
 
     if state_key not in st.session_state:
         df = get_data_per_admin(st.session_state.auth_email, as_df=True)
-        df = df.drop(columns=["user_id", "admin_id"], errors="ignore")
+        df = df.drop(columns=["user_id", "admin_id", "logo_path"], errors="ignore")
         st.session_state[state_key] = df
 
     df_original = st.session_state[state_key].copy()
