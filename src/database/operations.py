@@ -101,6 +101,14 @@ def get_user(cur, email: str):
     )
     return cur.fetchone()[0]
 
+def get_cert_template_path(cert_number: str):
+    with postgres() as con:
+        with con.cursor() as cur:
+            cur.execute(
+                "SELECT template_path FROM certificates WHERE cert_number = %s",
+                (cert_number,)
+            )
+            return cur.fetchone()[0]
 
 def insert_csv(csv_file, institution, logo_path, admin_mail, template, template_path):
     with postgres() as con:
