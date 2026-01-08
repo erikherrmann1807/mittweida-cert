@@ -56,6 +56,7 @@ def init_database():
                     cert_number varchar(255),
                     institution varchar(255),
                     template template_type,
+                    template_path varchar(255),
                     logo_path varchar(255),
 
                     user_id  integer,
