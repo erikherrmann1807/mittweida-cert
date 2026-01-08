@@ -16,6 +16,17 @@ def init_database():
     with postgres() as con:
         with con.cursor() as cur:
             cur.execute("""
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM pg_type WHERE typname = 'template_type'
+                ) THEN
+                    CREATE TYPE template_type AS ENUM ('default', 'custom');
+                END IF;
+            END $$;
+            """)
+
+            cur.execute("""
                 create table if not exists public.users (
                     id serial primary key,
                     main_email  varchar(255) unique,
@@ -44,6 +55,8 @@ def init_database():
                     created_at timestamp default now(),
                     cert_number varchar(255),
                     institution varchar(255),
+                    template template_type,
+                    template_path varchar(255),
                     logo_path varchar(255),
 
                     user_id  integer,

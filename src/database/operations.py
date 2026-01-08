@@ -81,14 +81,16 @@ def get_or_create_user_id(cur, main_email):
     return cur.fetchone()[0]
 
 
-def get_admin_id(cur, email: str):
-    cur.execute(
-        "SELECT id FROM admins WHERE email = %s",
-        (email,)
-    )
-    row = cur.fetchone()
-    if row:
-        return row[0]
+def get_admin_id(email: str):
+    with postgres() as con:
+        with con.cursor() as cur:
+            cur.execute(
+                "SELECT id FROM admins WHERE email = %s",
+                (email,)
+            )
+            row = cur.fetchone()
+            if row:
+                return row[0]
     return None
 
 
@@ -99,8 +101,16 @@ def get_user(cur, email: str):
     )
     return cur.fetchone()[0]
 
+def get_cert_template_path(cert_number: str):
+    with postgres() as con:
+        with con.cursor() as cur:
+            cur.execute(
+                "SELECT template_path FROM certificates WHERE cert_number = %s",
+                (cert_number,)
+            )
+            return cur.fetchone()[0]
 
-def insert_csv(csv_file, institution, logo_path, admin_mail):
+def insert_csv(csv_file, institution, logo_path, admin_mail, template, template_path):
     with postgres() as con:
         with con.cursor() as cur:
             df = pd.read_csv(csv_file[0], sep=';')
@@ -111,14 +121,15 @@ def insert_csv(csv_file, institution, logo_path, admin_mail):
                 platform = row['platform']
                 cert_number = row['cert_number']
                 user_id = get_or_create_user_id(cur, email)
-                admin_id = get_admin_id(cur, admin_mail)
+                admin_id = get_admin_id(admin_mail)
                 cur.execute(
                     """
-                    INSERT INTO certificates (name, email, course_name, platform, created_at, cert_number, institution,
-                                              user_id, logo_path, admin_id)
-                    VALUES (%s, %s, %s, %s, NOW(), %s, %s, %s, %s, %s)
+                    INSERT INTO certificates (name, email, course_name, platform, created_at, cert_number, institution, 
+                                              template, template_path, logo_path, user_id, admin_id)
+                    VALUES (%s, %s, %s, %s, NOW(), %s, %s, %s, %s, %s, %s, %s)
                     """,
-                    (name, email, course_name, platform, cert_number, institution, user_id, logo_path, admin_id)
+                    (name, email, course_name, platform, cert_number, institution, template, template_path,
+                     logo_path, user_id, admin_id)
                 )
 
 
@@ -140,7 +151,7 @@ def get_data_per_user(email: str):
 def get_data_per_admin(email: str, as_df: bool = False):
     with postgres() as con:
         with con.cursor() as cur:
-            admin_id = get_admin_id(cur, email)
+            admin_id = get_admin_id(email)
 
             cur.execute("""
                         SELECT *
@@ -361,7 +372,7 @@ def apply_certificate_editor_changes(
         with con.cursor() as cur:
             admin_id = None
             if admin_mail is not None:
-                admin_id = get_admin_id(cur, admin_mail)
+                admin_id = get_admin_id(admin_mail)
                 if admin_id is None:
                     raise ValueError("Admin nicht gefunden.")
 

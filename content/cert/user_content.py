@@ -5,7 +5,7 @@ import streamlit as st
 from PIL import Image
 from babel.dates import format_date
 
-from src.database.operations import set_alias_email, get_data_per_user
+from src.database.operations import set_alias_email, get_data_per_user, get_cert_template_path
 from src.generate_pdf import convert_odt_to_pdf
 from util import get_config, get_placeholders
 
@@ -31,7 +31,8 @@ def display_certs(certs_per_row: int, rows: list[list[tuple[Any, ...]]]):
             for idx, cert in enumerate(row):
                 with cert_columns[idx]:
                     with st.container(border=True, height=320, vertical_alignment="distribute"):
-                        cert_id, name, email, course_name, platform, created_at, cert_number, institution, logo_path, user_id, admin_id = cert
+                        (cert_id, name, email, course_name, platform, created_at, cert_number, institution, template,
+                         template_path, logo_path, user_id, admin_id) = cert
                         date = format_date(created_at, locale='de_DE')
                         st.markdown(f"#### {course_name}")
                         st.markdown(f"{cert_cfg['name']} {name}")
@@ -123,7 +124,7 @@ def download_dialog(name: str, email: str, course_name: str, platform: str, crea
                 name, email, course_name, platform, created_at, cert_number, institution
             )
 
-            template_file = "data/Cert.odt"
+            template_file = get_cert_template_path(cert_number= cert_number)
 
             pdf = convert_odt_to_pdf(
                 template_path=template_file,
