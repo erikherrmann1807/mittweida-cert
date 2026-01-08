@@ -1,6 +1,5 @@
 import streamlit as st
 
-from content.super_user.add_admin import add_admin
 from content.super_user.navigation import navigation
 from util import get_config, init_session_states
 

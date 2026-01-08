@@ -29,6 +29,7 @@ def build_message(to_email: str, code: str) -> EmailMessage:
     msg.add_alternative(html, subtype="html")
     return msg
 
+
 def build_admin_registration_message(to_email: str, email: str, name: str, affiliation: str):
     plain = (
         f"{name} beantragt einen Admin Zugriff\n\n"
@@ -57,6 +58,7 @@ def build_admin_registration_message(to_email: str, email: str, name: str, affil
     msg.add_alternative(html, subtype="html")
     return msg
 
+
 def build_admin_confirmation_message(to_email):
     plain = (
         f"Ihr Antrag auf Admin Zugriff wird hiermit bestätigt\n\n"
@@ -75,14 +77,44 @@ def build_admin_confirmation_message(to_email):
     msg.add_alternative(html, subtype="html")
     return msg
 
+def build_admin_registration_request_confirmation(to_email: str, systemadmin_email: str):
+    plain = (
+        f"Vielen Dank für Ihre Anfrage des Adminzugriffs für den HSMW Zertifikatsservice\n\n"
+        f"Ihre Anfrage wird momentan geprüft und bearbeitet\n\n"
+        f"Sollten Sie dies nicht selbst getan haben, melden Sie sich unverzögerlich beim Systemadmin\n\n"
+        f"E-Mail Systemadmin: {systemadmin_email}\n\n"
+    )
+    html = f"""
+                <html><body style="font-family:Arial, sans-serif;">
+                  <h2>Vielen Dank für Ihre Anfrage des Adminzugriffs für den HSMW Zertifikatsservice</h2>
+                  <p>Ihre Anfrage wird momentan geprüft und bearbeitet</p>
+                  <p>Sollten Sie dies nicht selbst getan haben, melden Sie sich unverzögerlich beim Systemadmin</p>
+                  <p>E-Mail Systemadmin: {systemadmin_email}</p>
+                </body></html>
+                """
+
+    msg = EmailMessage()
+    msg["Subject"] = f"Freischaltung Admin Zugriff"
+    msg["From"] = SMTP_FROM
+    msg["To"] = to_email
+    msg.set_content(plain)
+    msg.add_alternative(html, subtype="html")
+    return msg
+
+
 def send_mail_code(to_email: str, code: str):
     msg = build_message(to_email, code)
     mail_setup(msg)
+
 
 def send_admin_registration_mail(to_email: str, email: str, name: str, affiliation: str):
     msg = build_admin_registration_message(to_email, email, name, affiliation)
     mail_setup(msg)
 
+
+def send_admin_registration_request_confirmation(to_email: str, systemadmin_email: str):
+    msg = build_admin_registration_request_confirmation(to_email, systemadmin_email)
+    mail_setup(msg)
 
 def send_admin_confirmation_mail(to_email: str):
     msg = build_admin_confirmation_message(to_email)
