@@ -3,7 +3,7 @@ import os
 import streamlit as st
 
 from src.database.operations import insert_csv, apply_certificate_editor_changes, get_data_per_admin, get_admin_id
-from util import get_config, get_logo_path
+from util import get_config, get_logo_path, t
 
 config = get_config()
 
@@ -25,41 +25,37 @@ def admin_content():
         st.divider()
 
         template_choice = st.radio(
-            "Template auswählen",
-            ["Standard-Template verwenden", "Eigenes Template hochladen"],
+            f"{admin_cfg['template_section']['header']}",
+            admin_cfg['template_section']['radio_button'],
             index=0
         )
 
         uploaded_logo = None
-        if template_choice == "Standard-Template verwenden":
+        if template_choice == admin_cfg['template_section']['radio_button'][0]:
             uploaded_logo = st.file_uploader(admin_cfg['upload_logo'], type=["png"], )
 
         template_type = "default"
         template_path = os.path.join("data", "Cert.odt")
 
         custom_template_file = None
-        if template_choice == "Eigenes Template hochladen":
+        if template_choice == admin_cfg['template_section']['radio_button'][1]:
             template_type = "custom"
 
-            st.markdown("**Anleitung für das Custom-Template**")
-            st.write(
-                "- Dokument gemäß Vorgaben vorbereiten\n"
-                "- Platzhalter korrekt setzen\n"
-                "- Format: LibreOffice (.odt)\n"
-            )
+            st.markdown(f"{admin_cfg['template_section']['instruction_custom_template_header']}")
+            st.write(f"{admin_cfg['template_section']['instruction_custom_template']}")
 
-            confirmed = st.checkbox("Ich habe die Anleitung gelesen und verstanden.")
+            confirmed = st.checkbox(f"{admin_cfg['template_section']['confirm_instructions']}")
             if confirmed:
-                custom_template_file = st.file_uploader("Custom Template (odt) hochladen", type=["odt"])
+                custom_template_file = st.file_uploader(f"{admin_cfg['template_section']['upload_hint']}", type=["odt"])
             else:
-                st.warning("Bitte bestätige zuerst die Anleitung, um den Upload freizuschalten.")
+                st.warning(f"{admin_cfg['template_section']['instruction_warning']}")
 
             template_path = template_rel_path
 
         if st.button(label=admin_cfg['confirm_upload_button']):
             if template_type == "custom":
                 if custom_template_file is None:
-                    st.warning("Bitte lade ein Custom Template hoch (DOCX), bevor du bestätigst.")
+                    st.warning(f"{admin_cfg['template_section']['confirm_upload_warning']}")
                     return
 
                 os.makedirs(os.path.dirname(template_abs_path), exist_ok=True)
@@ -80,7 +76,7 @@ def admin_content():
 
 
     st.markdown("---")
-    st.subheader("Zertifikate bearbeiten")
+    st.subheader(f"{admin_cfg['edit_cert_data_section']['header']}")
 
     state_key = f"cert_df_original__{st.session_state.auth_email}"
 
@@ -92,7 +88,7 @@ def admin_content():
     df_original = st.session_state[state_key].copy()
 
     if df_original.empty:
-        st.info("Noch keine Zertifikate vorhanden (oder keine für diesen Admin gefunden).")
+        st.info(f"{admin_cfg['edit_cert_data_section']['empty_info']}")
         return
 
     disabled_cols = ["id", "created_at"]
@@ -107,9 +103,9 @@ def admin_content():
     )
 
     st.caption(
-        "Hinweis: cert_number von bestehenden Zertifikaten wird beim Speichern automatisch zurückgesetzt.")
+        f"{admin_cfg['edit_cert_data_section']['cert_number_hint']}")
 
-    if st.button("Änderungen speichern", type="primary"):
+    if st.button(f"{admin_cfg['edit_cert_data_section']['save_changes_button']}", type="primary"):
         try:
             reset_ids = apply_certificate_editor_changes(
                 admin_mail=st.session_state.auth_email,
@@ -124,14 +120,14 @@ def admin_content():
             if reset_ids:
                 preview = ", ".join(map(str, reset_ids[:20]))
                 more = " …" if len(reset_ids) > 20 else ""
-                st.warning(
-                    f"cert_number wurde bei {len(reset_ids)} bestehenden Zertifikaten zurückgesetzt (IDs: {preview}{more}).")
+                st.warning(t(f"texts.{st.session_state.language}.admin_content.edit_cert_data_section.reset_cert_number_warning",
+                             reset_ids=len(reset_ids), preview=preview, more=more))
 
-            st.success("Gespeichert.")
+            st.success(f"{admin_cfg['edit_cert_data_section']['success']}")
             st.rerun()
 
         except ValueError as e:
             st.error(str(e))
         except Exception as e:
-            st.error("Beim Speichern ist ein unerwarteter Fehler aufgetreten.")
+            st.error(f"{admin_cfg['edit_cert_data_section']['error']}")
             st.exception(e)
