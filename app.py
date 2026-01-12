@@ -1,16 +1,19 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
 
-from content.admin_content import admin_content
-from content.admin_registration import admin_registration
+from content.cert.admin_content import admin_content
+from content.cert.admin_registration import admin_registration
+from content.cert.login import language_section, login_gate
+from content.cert.user_content import user_content
 from content.landing_page.landing_page import show_landing_page
-from content.login import login_gate, language_section
-from content.user_content import user_content
+from src.database.init_database import init_database
 from util import get_config, Role, init_session_states, reset_login
 
 config = get_config()
 
 init_session_states()
+
+init_database()
 
 st.set_page_config(page_title=config['texts'][st.session_state.language]['general']['cert_name'], page_icon="🎓")
 
@@ -30,16 +33,9 @@ if st.session_state.language_set:
         )
 
 if st.session_state.selected_page_prev != selected_page:
+    if not st.session_state.selected_page_prev is None:
+        reset_login()
     st.session_state.selected_page_prev = selected_page
-
-    if selected_page == "User Login":
-        st.session_state.role = Role.User
-        reset_login(st.session_state.role)
-    elif selected_page == "Admin Login":
-        st.session_state.role = Role.Admin
-        reset_login(st.session_state.role)
-    elif selected_page == "Admin Registrierung":
-        st.session_state.role = Role.Registration
 
 if selected_page == "Landing Page":
     show_landing_page()

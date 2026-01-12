@@ -1,5 +1,6 @@
 import hmac
 import time
+
 import streamlit as st
 
 from src.auth.otp_mail.config import RESEND_COOLDOWN, EMAIL_RE, CODE_LEN, CODE_TTL_SECONDS, MAX_ATTEMPTS
@@ -7,6 +8,7 @@ from src.auth.otp_mail.email import send_mail_code
 from util import random_numeric_code, hash_code, get_config, t
 
 config = get_config()
+
 
 def request_login_code(email: str) -> str:
     email = email.strip().lower()
@@ -26,7 +28,7 @@ def request_login_code(email: str) -> str:
     st.session_state.code_expired_at = now + CODE_TTL_SECONDS
     st.session_state.code_last_sent_at = now
     code_ttl = CODE_TTL_SECONDS // 60
-    return t(f"texts.{st.session_state.language}.login.request_code", email= email, code_ttl= code_ttl)
+    return t(f"texts.{st.session_state.language}.login.request_code", email=email, code_ttl=code_ttl)
 
 
 def verify_login_code(email: str, code: str) -> bool:

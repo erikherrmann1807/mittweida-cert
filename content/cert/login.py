@@ -1,33 +1,35 @@
 import streamlit as st
 
 from src.auth.otp_mail.login_code import request_login_code, verify_login_code
-from src.database.init_database import init_database
 from src.database.operations import check_existing_user
 from util import get_config, get_lang_options, Role, validate_email
 
 config = get_config()
 
+
 def login_gate(role: str):
-    init_database()
     if not st.session_state.auth_email and not st.session_state.admin_authenticated:
         with st.container(border=True):
             email_req = mail_section(role=role)
             code_section(email_req)
         st.stop()
 
+
 def language_section():
     @st.dialog(" ", dismissible=False)
     def language_dialog():
-        locale = st.radio(label_visibility="hidden", label="", options=list(get_lang_options().keys()))
+        locale = st.radio(label_visibility="hidden", label="Language", options=list(get_lang_options().keys()))
         st.session_state.language = locale.lower()
         if st.button(config['texts'][st.session_state.language]['login']['language_selection']):
             st.session_state.language_set = True
             st.rerun()
+
     language_dialog()
 
 
 def role_selection():
     role_selection_cfg = config['texts'][st.session_state.language]['role_selection']
+
     @st.dialog(" ", dismissible=False)
     def role_dialog():
         role_columns = st.columns(3)
@@ -81,7 +83,7 @@ def mail_section(role: str) -> str | None:
         if not validate_email(email_req):
             st.error(config['texts'][st.session_state.language]['login']['invalid_mail'])
             return None
-        st.session_state.user_exists = check_existing_user(email=email_req, role= role)
+        st.session_state.user_exists = check_existing_user(email=email_req, role=role)
         if st.session_state.user_exists:
             try:
                 st.session_state.login_mail = email_req.strip().lower()

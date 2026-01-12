@@ -3,11 +3,12 @@ import json
 import os
 import re
 import secrets
+import ssl
 import string
-import streamlit as st
+from enum import Enum
 from pathlib import Path
 
-from enum import Enum
+import streamlit as st
 
 from src.auth.otp_mail.config import CODE_LEN
 from src.database.init_database import postgres
@@ -38,6 +39,7 @@ def delete_data():
 
         con.commit()
 
+
 def random_numeric_code(n=CODE_LEN) -> str:
     return "".join(secrets.choice(string.digits) for _ in range(n))
 
@@ -45,7 +47,9 @@ def random_numeric_code(n=CODE_LEN) -> str:
 def hash_code(email: str, code: str) -> str:
     return hashlib.sha256((email + ":" + code).encode("utf-8")).hexdigest()
 
-def get_placeholders(name: str, email: str, course_name: str, platform: str, created_at: str, cert_number: str, institution: str) -> dict:
+
+def get_placeholders(name: str, email: str, course_name: str, platform: str, created_at: str, cert_number: str,
+                     institution: str) -> dict:
     placeholders = {
         "{{name}}": name,
         "{{email}}": email,
@@ -63,11 +67,14 @@ def get_config():
         config = json.load(config_file)
     return config
 
+
 def get_dummy_image_path():
     return "Pictures/100000010000011B0000008ECF685CA0.png"
 
+
 def get_logo_path():
     return "logos"
+
 
 def get_lang_options():
     lang_options = {
@@ -76,8 +83,10 @@ def get_lang_options():
     }
     return lang_options
 
+
 strings_path = Path(".streamlit/config.json")
 STRINGS = json.loads(strings_path.read_text(encoding="utf-8"))
+
 
 def get_from_path(data: dict, path: str | list[str]):
     if isinstance(path, str):
@@ -108,6 +117,7 @@ def t(path: str | list[str], **kwargs) -> str:
 
 
 Role = Enum('Role', ['User', 'Admin', 'Registration'])
+
 
 def init_session_states():
     if "admin_authenticated" not in st.session_state:
@@ -158,14 +168,24 @@ def init_session_states():
     if "selected_page_prev" not in st.session_state:
         st.session_state.selected_page_prev = None
 
+    if "verify_counter" not in st.session_state:
+        st.session_state.verify_counter = 0
+
+
 def validate_email(email: str) -> bool:
     pattern = r"^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
     return re.match(pattern, email) is not None
 
-def reset_login(role: str):
+
+def get_mail_context():
+    context = ssl.create_default_context()
+    return context
+
+
+def reset_login():
     st.session_state.otp = False
     st.session_state.auth_email = None
-    if role == Role.User:
-        st.session_state.admin_authenticated = False
-    elif role == Role.Admin:
-        st.session_state.user_authenticated = False
+    st.session_state.admin_authenticated = False
+    st.session_state.user_authenticated = False
+
+
