@@ -15,7 +15,7 @@ def get_cooldown_state():
 
 
 def user_content(config):
-    st.title("Mittweida Certificate Verification")
+    st.title(config['texts'][st.session_state.language]['verify_cert']['title'])
 
     state = get_cooldown_state()
     now = time.time()
@@ -27,11 +27,11 @@ def user_content(config):
             key="search"
         )
 
-        verify_clicked = st.button("Verify")
+        verify_clicked = st.button(config['texts'][st.session_state.language]['verify_cert']['verify_button'])
 
         if in_cooldown:
             remaining = int(state["blocked_until"] - now)
-            st.error(f"Zu viele Versuche. Bitte warten Sie noch {remaining}s.")
+            st.error(t(f"texts.{st.session_state.language}.verify_cert.cooldown_error", remaining=remaining))
             return
 
         if verify_clicked and not in_cooldown:
@@ -43,7 +43,7 @@ def user_content(config):
                 if st.session_state.verify_counter >= MAX_ATTEMPTS:
                     state["blocked_until"] = time.time() + COOLDOWN_SECONDS
                     st.session_state.verify_counter = 0
-                    st.error(f"Zu viele Versuche. Sie müssen {COOLDOWN_SECONDS}s warten.")
+                    st.error(t(f"texts.{st.session_state.language}.verify_cert.attempts_error", COOLDOWN_SECONDS=COOLDOWN_SECONDS))
 
                 if cert:
                     (
