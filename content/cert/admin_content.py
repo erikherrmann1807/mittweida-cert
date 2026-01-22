@@ -1,7 +1,9 @@
 import os
 
+import requests
 import streamlit as st
 
+from src.api.wrapper import import_csv_api
 from src.database.operations import insert_csv, apply_certificate_editor_changes, get_data_per_admin, get_admin_id
 from util import get_config, get_logo_path, t
 
@@ -69,8 +71,19 @@ def admin_content():
                 with open(logo_path, "wb") as file:
                     file.write(uploaded_logo.getbuffer())
             if institution and uploaded_file:
-                insert_csv(uploaded_file, institution, logo_path, st.session_state.auth_email, template_type, template_path)
-                st.success(admin_cfg['upload_success'])
+                try:
+                    resp = import_csv_api(
+                        uploaded_file=uploaded_file,
+                        institution=institution,
+                        logo_path=logo_path,
+                        template_type=template_type,
+                        template_path=template_path,
+                        admin_mail=st.session_state.auth_email,
+                    )
+                    st.success(admin_cfg['upload_success'])
+                    st.json(resp)
+                except requests.HTTPError as e:
+                    st.error(e.response.text)
             else:
                 st.warning(admin_cfg['upload_warning'])
 

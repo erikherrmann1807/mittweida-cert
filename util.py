@@ -7,6 +7,7 @@ import ssl
 import string
 from enum import Enum
 from pathlib import Path
+from datetime import datetime
 
 import streamlit as st
 
@@ -189,3 +190,15 @@ def reset_login():
     st.session_state.user_authenticated = False
 
 
+def parse_dt(value):
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value
+    s = str(value).strip()
+    if s.endswith("Z"):
+        s = s.replace("Z", "+00:00")
+    try:
+        return datetime.fromisoformat(s)
+    except ValueError:
+        return None

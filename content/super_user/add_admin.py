@@ -1,7 +1,7 @@
 import streamlit as st
 
+from src.api.wrapper import create_admin
 from src.auth.otp_mail.email import send_admin_confirmation_mail
-from src.database.operations import create_admin
 
 
 def add_admin(config):
@@ -15,8 +15,9 @@ def add_admin(config):
         submitted = st.form_submit_button("Speichern & Mail senden")
 
     if submitted:
-        create_admin(name=name_query, email=email_query, affiliation=affiliation_query)
-
-        send_admin_confirmation_mail(to_email=email_query)
-
-        st.success("Admin erfolgreich hinzugefügt")
+        try:
+            resp = create_admin(name_query, email_query, affiliation_query)
+            st.success(f"Admin erstellt: ID={resp['id']}, Email={resp['email']}")
+            send_admin_confirmation_mail(to_email=email_query)
+        except Exception as e:
+            st.error(f"Fehler: {e}")
