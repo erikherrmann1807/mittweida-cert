@@ -2,9 +2,11 @@ import os
 
 import requests
 import streamlit as st
+import numpy as np
+from pandas import DataFrame
 
-from src.api.wrapper import import_csv_api
-from src.database.operations import insert_csv, apply_certificate_editor_changes, get_data_per_admin, get_admin_id
+from src.api.wrapper import import_csv_api, get_certificates_for_admin_email, apply_certificate_editor_changes, \
+    get_admin_id
 from util import get_config, get_logo_path, t
 
 config = get_config()
@@ -94,8 +96,9 @@ def admin_content():
     state_key = f"cert_df_original__{st.session_state.auth_email}"
 
     if state_key not in st.session_state:
-        df = get_data_per_admin(st.session_state.auth_email, as_df=True)
-        df = df.drop(columns=["user_id", "admin_id", "logo_path"], errors="ignore")
+        data = get_certificates_for_admin_email(st.session_state.auth_email)
+        df = DataFrame(data)
+        df = df.drop(columns=["user", "admin", "logo_path"], errors="ignore")
         st.session_state[state_key] = df
 
     df_original = st.session_state[state_key].copy()
@@ -120,14 +123,14 @@ def admin_content():
 
     if st.button(f"{admin_cfg['edit_cert_data_section']['save_changes_button']}", type="primary"):
         try:
-            reset_ids = apply_certificate_editor_changes(
-                admin_mail=st.session_state.auth_email,
-                edited_df=edited_df,
-                original_df=df_original
-            )
+            edited_lst = edited_df.replace({np.nan: None}).to_dict(orient="records")
+            original_lst = df_original.replace({np.nan: None}).to_dict(orient="records")
 
-            df = get_data_per_admin(st.session_state.auth_email, as_df=True)
-            df = df.drop(columns=["user_id", "admin_id"], errors="ignore")
+            reset_ids = apply_certificate_editor_changes(edited_lst, original_lst, st.session_state.auth_email)
+
+            data = get_certificates_for_admin_email(st.session_state.auth_email)
+            df = DataFrame(data)
+            df = df.drop(columns=["user", "admin", "logo_path"], errors="ignore")
             st.session_state[state_key] = df
 
             if reset_ids:

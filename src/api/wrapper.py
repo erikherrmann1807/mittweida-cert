@@ -1,4 +1,5 @@
 import urllib.parse
+from typing import Optional, Any
 
 from src.api.client import post, get
 
@@ -40,5 +41,26 @@ def get_cert_template_path(cert_number: str) -> str:
 
 def get_certificates_for_user_email(email: str):
     return get("/certificates/by-user", params={"email": email})
+
+def get_certificates_for_admin_email(email: str):
+    return get("/certificates/by-admin", params={"email": email})
+
+def apply_certificate_editor_changes(
+    edited_records: list[dict[str, Any]],
+    original_records: list[dict[str, Any]],
+    admin_mail: Optional[str] = None,
+):
+    admin_mail_q = urllib.parse.quote(admin_mail or "")
+    resp = post(f"/certificates/apply-editor?admin_mail={admin_mail_q}", json={
+        "edited": edited_records,
+        "original": original_records,
+    })
+    return resp.get("reset_ids", [])
+
+def get_admin_id(email: str):
+    return get("/admins/id", params={"email": email})
+
+def get_certificate_by_cert_number(cert_number: str):
+    return get(f"/certificates/verify?cert_number={cert_number}")
 
 
