@@ -11,34 +11,8 @@ from pathlib import Path
 
 import streamlit as st
 
+from src.api.wrapper import logout_api
 from src.auth.otp_mail.config import CODE_LEN
-from src.database.init_database import postgres
-
-
-def show_data():
-    with postgres() as con:
-        with con.cursor() as cur:
-            cur.execute("SELECT id FROM users WHERE main_email = 'erik@example.de'")
-            row = cur.fetchone()
-            print("User Id:")
-            for user in row:
-                print(user)
-
-            user_id = row[0]
-            cur.execute("SELECT * FROM certificates WHERE user_id = %s", (user_id,))
-            certificates = cur.fetchall()
-            print("\nCertificates:")
-            for cert in certificates:
-                print(cert)
-
-
-def delete_data():
-    with postgres() as con:
-        with con.cursor() as cur:
-            cur.execute("DELETE FROM certificates")
-            cur.execute("DELETE FROM users")
-
-        con.commit()
 
 
 def random_numeric_code(n=CODE_LEN) -> str:
@@ -121,56 +95,26 @@ Role = Enum('Role', ['User', 'Admin', 'Registration'])
 
 
 def init_session_states():
-    if "admin_authenticated" not in st.session_state:
-        st.session_state.admin_authenticated = False
-
-    if "user_authenticated" not in st.session_state:
-        st.session_state.user_authenticated = False
-
-    if "auth_email" not in st.session_state:
-        st.session_state.auth_email = None
-
-    if "user_exists" not in st.session_state:
-        st.session_state.user_exists = False
-
-    if "login_mail" not in st.session_state:
-        st.session_state.login_mail = None
-
-    if "login_hash_code" not in st.session_state:
-        st.session_state.login_hash_code = None
-
-    if "code_created_at" not in st.session_state:
-        st.session_state.code_created_at = None
-
-    if "code_expired_at" not in st.session_state:
-        st.session_state.code_expired_at = None
-
-    if "login_attempts" not in st.session_state:
-        st.session_state.login_attempts = 0
-
-    if "code_last_sent_at" not in st.session_state:
-        st.session_state.code_last_sent_at = None
-
-    if "otp" not in st.session_state:
-        st.session_state.otp = False
-
-    if "success_message" not in st.session_state:
-        st.session_state.success = None
-
-    if "language" not in st.session_state:
-        st.session_state.language = "german"
-
-    if "language_set" not in st.session_state:
-        st.session_state.language_set = False
-
-    if "role" not in st.session_state:
-        st.session_state.role = None
-
-    if "selected_page_prev" not in st.session_state:
-        st.session_state.selected_page_prev = None
-
-    if "verify_counter" not in st.session_state:
-        st.session_state.verify_counter = 0
+    st.session_state.setdefault("admin_authenticated", False)
+    st.session_state.setdefault("user_authenticated", False)
+    st.session_state.setdefault("auth_email", None)
+    st.session_state.setdefault("user_exists", False)
+    st.session_state.setdefault("login_mail", None)
+    st.session_state.setdefault("login_hash_code", None)
+    st.session_state.setdefault("code_created_at", None)
+    st.session_state.setdefault("code_expired_at", None)
+    st.session_state.setdefault("login_attempts", 0)
+    st.session_state.setdefault("code_last_sent_at", None)
+    st.session_state.setdefault("otp", False)
+    st.session_state.setdefault("success_message", None)
+    st.session_state.setdefault("language", "german")
+    st.session_state.setdefault("language_set", False)
+    st.session_state.setdefault("role", None)
+    st.session_state.setdefault("selected_page_prev", None)
+    st.session_state.setdefault("verify_counter", 0)
+    st.session_state.setdefault("access_token", None)
+    st.session_state.setdefault("otp_next_allowed_at", 0.0)
+    st.session_state.setdefault("otp_last_error", "")
 
 
 def validate_email(email: str) -> bool:
@@ -184,10 +128,18 @@ def get_mail_context():
 
 
 def reset_login():
-    st.session_state.otp = False
+    try:
+        if st.session_state.get("access_token"):
+            logout_api()
+    except Exception:
+        pass
+
+    st.session_state.access_token = None
     st.session_state.auth_email = None
-    st.session_state.admin_authenticated = False
     st.session_state.user_authenticated = False
+    st.session_state.admin_authenticated = False
+    st.session_state.otp = False
+    st.session_state.login_mail = None
 
 
 def parse_dt(value):

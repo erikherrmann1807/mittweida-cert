@@ -80,7 +80,6 @@ def admin_content():
                         logo_path=logo_path,
                         template_type=template_type,
                         template_path=template_path,
-                        admin_mail=st.session_state.auth_email,
                     )
                     st.success(admin_cfg['upload_success'])
                     st.json(resp)
@@ -95,7 +94,7 @@ def admin_content():
     state_key = f"cert_df_original__{st.session_state.auth_email}"
 
     if state_key not in st.session_state:
-        data = get_certificates_for_admin_email(st.session_state.auth_email)
+        data = get_certificates_for_admin_email()
         df = DataFrame(data)
         df = df.drop(columns=["user", "admin", "logo_path"], errors="ignore")
         st.session_state[state_key] = df
@@ -125,9 +124,9 @@ def admin_content():
             edited_lst = edited_df.replace({np.nan: None}).to_dict(orient="records")
             original_lst = df_original.replace({np.nan: None}).to_dict(orient="records")
 
-            reset_ids = apply_certificate_editor_changes(edited_lst, original_lst, st.session_state.auth_email)
+            reset_ids = apply_certificate_editor_changes(edited_lst, original_lst)
 
-            data = get_certificates_for_admin_email(st.session_state.auth_email)
+            data = get_certificates_for_admin_email()
             df = DataFrame(data)
             df = df.drop(columns=["user", "admin", "logo_path"], errors="ignore")
             st.session_state[state_key] = df

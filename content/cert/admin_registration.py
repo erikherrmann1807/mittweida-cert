@@ -1,7 +1,7 @@
 import streamlit as st
 
+from src.api.wrapper import check_existing_user
 from src.auth.otp_mail.email import send_admin_registration_mail, send_admin_registration_request_confirmation
-from src.database.operations import check_existing_user
 from util import get_config, validate_email
 
 config = get_config()

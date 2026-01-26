@@ -37,19 +37,19 @@ if selected_page == "Landing Page":
     show_landing_page()
 
 elif selected_page == "Admin Registrierung":
-    st.session_state.role = Role.Registration
+    st.session_state.role = Role.Registration.name
     admin_registration()
 
 elif selected_page == "User Login":
-    st.session_state.role = Role.User
-    login_gate(Role.User)
+    st.session_state.role = Role.User.name
+    login_gate()
 
     if st.session_state.user_authenticated:
         user_content()
 
 elif selected_page == "Admin Login":
-    st.session_state.role = Role.Admin
-    login_gate(Role.Admin)
+    st.session_state.role = Role.Admin.name
+    login_gate()
 
     if st.session_state.admin_authenticated:
         admin_content()

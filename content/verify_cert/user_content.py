@@ -39,7 +39,6 @@ def user_content(config):
             st.session_state.verify_counter += 1
 
             if search_query:
-                # cert = verify_cert(search_query)
                 cert = get_certificate_by_cert_number(search_query)
 
                 if st.session_state.verify_counter >= MAX_ATTEMPTS:
