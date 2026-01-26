@@ -25,7 +25,8 @@ def admin_registration():
                 send_admin_registration_mail(admin_registration_cfg['system_admin_email'], email=email_query,
                                              name=name_query, affiliation=affiliation_query)
                 send_admin_registration_request_confirmation(to_email=email_query,
-                                                             systemadmin_email=admin_registration_cfg['system_admin_email'],)
+                                                             systemadmin_email=admin_registration_cfg[
+                                                                 'system_admin_email'], )
                 st.success(admin_registration_cfg['success_registration'])
 
     st.stop()

@@ -1,9 +1,9 @@
 import time
+
 import streamlit as st
 from babel.dates import format_date
 
 from src.api.wrapper import get_certificate_by_cert_number
-from src.database.operations import verify_cert
 from util import t, parse_dt
 
 MAX_ATTEMPTS = 5
@@ -39,13 +39,14 @@ def user_content(config):
             st.session_state.verify_counter += 1
 
             if search_query:
-                #cert = verify_cert(search_query)
+                # cert = verify_cert(search_query)
                 cert = get_certificate_by_cert_number(search_query)
 
                 if st.session_state.verify_counter >= MAX_ATTEMPTS:
                     state["blocked_until"] = time.time() + COOLDOWN_SECONDS
                     st.session_state.verify_counter = 0
-                    st.error(t(f"texts.{st.session_state.language}.verify_cert.attempts_error", COOLDOWN_SECONDS=COOLDOWN_SECONDS))
+                    st.error(t(f"texts.{st.session_state.language}.verify_cert.attempts_error",
+                               COOLDOWN_SECONDS=COOLDOWN_SECONDS))
 
                 if cert:
                     name = cert.get("name")

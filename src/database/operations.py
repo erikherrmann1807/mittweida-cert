@@ -101,6 +101,7 @@ def get_user(cur, email: str):
     )
     return cur.fetchone()[0]
 
+
 def get_cert_template_path(cert_number: str):
     with postgres() as con:
         with con.cursor() as cur:
@@ -109,6 +110,7 @@ def get_cert_template_path(cert_number: str):
                 (cert_number,)
             )
             return cur.fetchone()[0]
+
 
 def insert_csv(csv_file, institution, logo_path, admin_mail, template, template_path):
     with postgres() as con:
@@ -124,7 +126,7 @@ def insert_csv(csv_file, institution, logo_path, admin_mail, template, template_
                 admin_id = get_admin_id(admin_mail)
                 cur.execute(
                     """
-                    INSERT INTO certificates (name, email, course_name, platform, created_at, cert_number, institution, 
+                    INSERT INTO certificates (name, email, course_name, platform, created_at, cert_number, institution,
                                               template, template_path, logo_path, user_id, admin_id)
                     VALUES (%s, %s, %s, %s, NOW(), %s, %s, %s, %s, %s, %s, %s)
                     """,
@@ -168,15 +170,15 @@ def get_data_per_admin(email: str, as_df: bool = False):
             cols = [desc[0] for desc in cur.description]
             return pd.DataFrame(rows, columns=cols)
 
+
 def get_data(as_df: bool = False):
     with postgres() as con:
         with con.cursor() as cur:
-
             cur.execute("""
                         SELECT *
                         FROM certificates
                         ORDER BY id ASC
-                        """,)
+                        """, )
 
             rows = cur.fetchall()
 
@@ -352,9 +354,9 @@ import pandas as pd
 
 
 def apply_certificate_editor_changes(
-    edited_df: pd.DataFrame,
-    original_df: pd.DataFrame,
-    admin_mail: Optional[str] = None,
+        edited_df: pd.DataFrame,
+        original_df: pd.DataFrame,
+        admin_mail: Optional[str] = None,
 ):
     PK = "id"
 
@@ -382,7 +384,8 @@ def apply_certificate_editor_changes(
                 if admin_id is not None:
                     cur.execute(
                         """
-                        DELETE FROM certificates
+                        DELETE
+                        FROM certificates
                         WHERE admin_id = %s
                           AND id = ANY (%s)
                         """,
@@ -391,7 +394,8 @@ def apply_certificate_editor_changes(
                 else:
                     cur.execute(
                         """
-                        DELETE FROM certificates
+                        DELETE
+                        FROM certificates
                         WHERE id = ANY (%s)
                         """,
                         (deleted_ids,),

@@ -77,6 +77,7 @@ def build_admin_confirmation_message(to_email):
     msg.add_alternative(html, subtype="html")
     return msg
 
+
 def build_admin_registration_request_confirmation(to_email: str, systemadmin_email: str):
     plain = (
         f"Vielen Dank für Ihre Anfrage des Adminzugriffs für den HSMW Zertifikatsservice\n\n"
@@ -115,6 +116,7 @@ def send_admin_registration_mail(to_email: str, email: str, name: str, affiliati
 def send_admin_registration_request_confirmation(to_email: str, systemadmin_email: str):
     msg = build_admin_registration_request_confirmation(to_email, systemadmin_email)
     mail_setup(msg)
+
 
 def send_admin_confirmation_mail(to_email: str):
     msg = build_admin_confirmation_message(to_email)

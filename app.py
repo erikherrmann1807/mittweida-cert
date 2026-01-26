@@ -6,14 +6,11 @@ from content.cert.admin_registration import admin_registration
 from content.cert.login import language_section, login_gate
 from content.cert.user_content import user_content
 from content.landing_page.landing_page import show_landing_page
-from src.database.init_database import init_database
 from util import get_config, Role, init_session_states, reset_login
 
 config = get_config()
 
 init_session_states()
-
-init_database()
 
 st.set_page_config(page_title=config['texts'][st.session_state.language]['general']['cert_name'], page_icon="🎓")
 
@@ -22,7 +19,6 @@ if not st.session_state.language_set:
     st.stop()
 
 if st.session_state.language_set:
-
     with st.sidebar.title("Navigation"):
         selected_page = option_menu(
             menu_title="Navigation",

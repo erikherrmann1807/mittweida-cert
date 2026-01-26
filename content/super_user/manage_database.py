@@ -1,4 +1,3 @@
-import pandas as pd
 import streamlit as st
 
 from src.database.operations import get_data, apply_certificate_editor_changes
@@ -10,7 +9,7 @@ def manage_database():
     state_key = f"cert_df_original__{st.session_state.auth_email}"
 
     if state_key not in st.session_state:
-        df = get_data( as_df=True)
+        df = get_data(as_df=True)
         df = df.drop(columns=["user_id", "admin_id", "logo_path"], errors="ignore")
         st.session_state[state_key] = df
 

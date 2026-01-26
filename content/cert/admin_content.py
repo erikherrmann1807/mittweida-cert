@@ -1,8 +1,8 @@
 import os
 
+import numpy as np
 import requests
 import streamlit as st
-import numpy as np
 from pandas import DataFrame
 
 from src.api.wrapper import import_csv_api, get_certificates_for_admin_email, apply_certificate_editor_changes, \
@@ -89,7 +89,6 @@ def admin_content():
             else:
                 st.warning(admin_cfg['upload_warning'])
 
-
     st.markdown("---")
     st.subheader(f"{admin_cfg['edit_cert_data_section']['header']}")
 
@@ -136,8 +135,9 @@ def admin_content():
             if reset_ids:
                 preview = ", ".join(map(str, reset_ids[:20]))
                 more = " …" if len(reset_ids) > 20 else ""
-                st.warning(t(f"texts.{st.session_state.language}.admin_content.edit_cert_data_section.reset_cert_number_warning",
-                             reset_ids=len(reset_ids), preview=preview, more=more))
+                st.warning(
+                    t(f"texts.{st.session_state.language}.admin_content.edit_cert_data_section.reset_cert_number_warning",
+                      reset_ids=len(reset_ids), preview=preview, more=more))
 
             st.success(f"{admin_cfg['edit_cert_data_section']['success']}")
             st.rerun()

@@ -5,6 +5,7 @@ API_CFG = st.secrets.get("api", {})
 
 API_BASE = API_CFG.get("base_url", "")
 
+
 def post(path, json=None, files=None, data=None):
     url = f"{API_BASE}{path}"
     if files is not None:
