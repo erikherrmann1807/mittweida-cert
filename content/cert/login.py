@@ -3,7 +3,6 @@ import time
 import streamlit as st
 
 from src.api.wrapper import request_otp, verify_otp
-from src.auth.otp_mail.email import send_mail_code
 from util import get_config, get_lang_options, Role, validate_email
 
 config = get_config()
@@ -88,9 +87,8 @@ def mail_section() -> str | None:
 
         if result["status"] == 200 and result.get("sent"):
             st.session_state.login_mail = email
-            st.session_state.success_message = "Code wurde gesendet."
+            st.session_state.success_message = "Code wurde gesendet und ist für 10min gültig."
             st.session_state.otp = True
-            send_mail_code(email, result.get("otp"))
 
         elif result["status"] == 429:
             remaining = int(result.get("retry_after", 60))
