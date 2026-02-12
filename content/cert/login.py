@@ -62,27 +62,52 @@ def mail_section() -> str | None:
     cfg = config['texts'][st.session_state.language]['login']
 
     st.subheader(cfg['login_header'])
+
+    default_email = st.session_state.get("login_mail", "")
+
     email_req = st.text_input(
         cfg['mail_input_label'],
         placeholder=cfg['mail_placeholder'],
+        value=default_email,
         disabled=st.session_state.otp,
     )
+
+    email = email_req.strip().lower() if email_req else ""
+
+    if not email:
+        st.info("Bitte E-Mail eingeben, um fortzufahren.")
+        return None
+
+    is_valid = validate_email(email)
+    if not is_valid:
+        st.error(cfg['invalid_mail'])
+        return None
 
     now = time.time()
     remaining = int(st.session_state.otp_next_allowed_at - now)
     if remaining < 0:
         remaining = 0
 
-    btn_label = cfg['send_code_button']
+    send_label = cfg['send_code_button']
     if remaining > 0:
-        btn_label = f"{cfg['send_code_button']} ({remaining}s)"
+        send_label = f"{cfg['send_code_button']} ({remaining}s)"
 
-    if st.button(btn_label, use_container_width=True):
-        if not validate_email(email_req):
-            st.error(cfg['invalid_mail'])
-            return None
+    col1, col2 = st.columns(2)
 
-        email = email_req.strip().lower()
+    with col1:
+        send_clicked = st.button(
+            send_label,
+            use_container_width=True,
+            disabled=(remaining > 0),
+        )
+
+    with col2:
+        have_code_clicked = st.button(
+            "Ich habe bereits einen Code",
+            use_container_width=True,
+        )
+
+    if send_clicked:
         result = request_otp(email=email, role=st.session_state.role)
 
         if result["status"] == 200 and result.get("sent"):
@@ -97,7 +122,16 @@ def mail_section() -> str | None:
         else:
             st.error("Unerwartete Antwort vom Server.")
 
-    if st.session_state.otp:
-        st.success(st.session_state.success_message)
+    if have_code_clicked:
+        st.session_state.login_mail = email
+        st.session_state.success_message = st.session_state.get(
+            "success_message", "Bitte gib deinen Code ein."
+        )
+        st.session_state.otp = True
 
-    return email_req
+    if st.session_state.otp:
+        if st.session_state.get("success_message"):
+            st.success(st.session_state.success_message)
+
+    return email
+
