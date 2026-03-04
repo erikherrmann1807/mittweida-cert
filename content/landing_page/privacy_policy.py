@@ -4,6 +4,7 @@ from util import get_config
 
 config = get_config()
 
+
 def privacy_policy_section():
     data_privacy_cfg = config['texts'][st.session_state.language]['landing_page']['data_privacy']
     with st.expander(f"{data_privacy_cfg['header']}"):

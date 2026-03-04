@@ -5,9 +5,9 @@ import streamlit as st
 from PIL import Image
 from babel.dates import format_date
 
-from src.database.operations import set_alias_email, get_data_per_user, get_cert_template_path
+from src.api.wrapper import set_alias_email, get_cert_template_path, get_certificates_for_user_email
 from src.generate_pdf import convert_odt_to_pdf
-from util import get_config, get_placeholders
+from util import get_config, get_placeholders, parse_dt
 
 config = get_config()
 
@@ -23,7 +23,7 @@ def user_content():
         display_certs(certs_per_row, rows)
 
 
-def display_certs(certs_per_row: int, rows: list[list[tuple[Any, ...]]]):
+def display_certs(certs_per_row: int, rows: list[list[dict]]):
     cert_cfg = config['texts'][st.session_state.language]['user_content']['cert_infos']
     with st.container(height=670, border=False):
         for row in rows:
@@ -31,29 +31,64 @@ def display_certs(certs_per_row: int, rows: list[list[tuple[Any, ...]]]):
             for idx, cert in enumerate(row):
                 with cert_columns[idx]:
                     with st.container(border=True, height=320, vertical_alignment="distribute"):
-                        (cert_id, name, email, course_name, platform, created_at, cert_number, institution, template,
-                         template_path, logo_path, user_id, admin_id) = cert
-                        date = format_date(created_at, locale='de_DE')
+                        cert_id = cert.get("id")
+                        name = cert.get("name")
+                        email = cert.get("email")
+                        course_name = cert.get("course_name")
+                        platform = cert.get("platform")
+                        created_at = cert.get("created_at")
+                        cert_number = cert.get("cert_number")
+                        institution = cert.get("institution")
+                        template_path = cert.get("template_path")
+                        logo_path = cert.get("logo_path")
+
+                        dt = parse_dt(created_at)
+                        date = format_date(dt.date(), locale="de_DE") if dt else ""
+
                         st.markdown(f"#### {course_name}")
                         st.markdown(f"{cert_cfg['name']} {name}")
                         st.markdown(f"{cert_cfg['platform']} {platform}")
                         st.markdown(f"{cert_cfg['date']} {date}")
                         st.markdown(f"{cert_cfg['institution']} {institution}")
-                        if st.button(cert_cfg['generate_button'], key=f"download_{course_name}",
-                                     use_container_width=True):
-                            download_dialog(name=name, email=email, course_name=course_name,
-                                            platform=platform, created_at=date, cert_number=cert_number,
-                                            institution=institution, logo_path=logo_path)
+
+                        if st.button(cert_cfg['generate_button'], key=f"download_{cert_id}", use_container_width=True):
+                            download_dialog(
+                                name=name,
+                                email=email,
+                                course_name=course_name,
+                                platform=platform,
+                                created_at=date,
+                                cert_number=cert_number,
+                                institution=institution,
+                                logo_path=logo_path,
+                            )
 
 
-def filter_logic(search_query: Any | None, selected_platform: Any | None, selected_year: str | None):
+def filter_logic(search_query, selected_platform, selected_year):
     filter_cfg = config['texts'][st.session_state.language]['user_content']['filter_options']
     certs_per_row = 2
-    certs = get_data_per_user(st.session_state.auth_email)
-    filtered_certs = [c for c in certs if
-                      (selected_year == filter_cfg['filter_dropdowns_all'] or selected_year in c[5].isoformat()) and
-                      (selected_platform == filter_cfg['filter_dropdowns_all'] or c[4] == selected_platform) and
-                      (search_query.lower() in c[3].lower() if search_query else True)]
+
+    certs = get_certificates_for_user_email(st.session_state.auth_email)
+
+    def year_matches(c):
+        if selected_year == filter_cfg['filter_dropdowns_all'] or not selected_year:
+            return True
+        created_at = c.get("created_at")
+        if not created_at:
+            return False
+        dt = parse_dt(created_at)
+        return dt is not None and str(dt.year) == str(selected_year)
+
+    def platform_matches(c):
+        return selected_platform == filter_cfg['filter_dropdowns_all'] or c.get("platform") == selected_platform
+
+    def search_matches(c):
+        if not search_query:
+            return True
+        q = search_query.lower()
+        return (c.get("course_name") or "").lower().find(q) != -1
+
+    filtered_certs = [c for c in certs if year_matches(c) and platform_matches(c) and search_matches(c)]
     rows = [filtered_certs[i:i + certs_per_row] for i in range(0, len(filtered_certs), certs_per_row)]
     return certs_per_row, rows
 
@@ -90,7 +125,7 @@ def verify_and_alias():
                 key="alternative_email",
                 help=config['texts'][st.session_state.language]['user_content']['alternative_mail']['help'])
             if alternate_email:
-                set_alias_email(main_email=st.session_state.auth_email, alias_email=alternate_email)
+                set_alias_email(st.session_state.auth_email, alternate_email)
                 st.success(config['texts'][st.session_state.language]['user_content']['alternative_mail']['success'])
         try:
             qr_image = Image.open(os.path.join('assets', 'images/qrcode_verify_cert.png'))
@@ -124,7 +159,7 @@ def download_dialog(name: str, email: str, course_name: str, platform: str, crea
                 name, email, course_name, platform, created_at, cert_number, institution
             )
 
-            template_file = get_cert_template_path(cert_number= cert_number)
+            template_file = get_cert_template_path(cert_number)
 
             pdf = convert_odt_to_pdf(
                 template_path=template_file,

@@ -1,8 +1,12 @@
 import os
 
+import numpy as np
+import requests
 import streamlit as st
+from pandas import DataFrame
 
-from src.database.operations import insert_csv, apply_certificate_editor_changes, get_data_per_admin, get_admin_id
+from src.api.wrapper import import_csv_api, get_certificates_for_admin_email, apply_certificate_editor_changes, \
+    get_admin_id
 from util import get_config, get_logo_path, t
 
 config = get_config()
@@ -69,11 +73,20 @@ def admin_content():
                 with open(logo_path, "wb") as file:
                     file.write(uploaded_logo.getbuffer())
             if institution and uploaded_file:
-                insert_csv(uploaded_file, institution, logo_path, st.session_state.auth_email, template_type, template_path)
-                st.success(admin_cfg['upload_success'])
+                try:
+                    resp = import_csv_api(
+                        uploaded_file=uploaded_file,
+                        institution=institution,
+                        logo_path=logo_path,
+                        template_type=template_type,
+                        template_path=template_path,
+                    )
+                    st.success(admin_cfg['upload_success'])
+                    st.json(resp)
+                except requests.HTTPError as e:
+                    st.error(e.response.text)
             else:
                 st.warning(admin_cfg['upload_warning'])
-
 
     st.markdown("---")
     st.subheader(f"{admin_cfg['edit_cert_data_section']['header']}")
@@ -81,8 +94,9 @@ def admin_content():
     state_key = f"cert_df_original__{st.session_state.auth_email}"
 
     if state_key not in st.session_state:
-        df = get_data_per_admin(st.session_state.auth_email, as_df=True)
-        df = df.drop(columns=["user_id", "admin_id", "logo_path"], errors="ignore")
+        data = get_certificates_for_admin_email()
+        df = DataFrame(data)
+        df = df.drop(columns=["user", "admin", "logo_path"], errors="ignore")
         st.session_state[state_key] = df
 
     df_original = st.session_state[state_key].copy()
@@ -107,21 +121,22 @@ def admin_content():
 
     if st.button(f"{admin_cfg['edit_cert_data_section']['save_changes_button']}", type="primary"):
         try:
-            reset_ids = apply_certificate_editor_changes(
-                admin_mail=st.session_state.auth_email,
-                edited_df=edited_df,
-                original_df=df_original
-            )
+            edited_lst = edited_df.replace({np.nan: None}).to_dict(orient="records")
+            original_lst = df_original.replace({np.nan: None}).to_dict(orient="records")
 
-            df = get_data_per_admin(st.session_state.auth_email, as_df=True)
-            df = df.drop(columns=["user_id", "admin_id"], errors="ignore")
+            reset_ids = apply_certificate_editor_changes(edited_lst, original_lst)
+
+            data = get_certificates_for_admin_email()
+            df = DataFrame(data)
+            df = df.drop(columns=["user", "admin", "logo_path"], errors="ignore")
             st.session_state[state_key] = df
 
             if reset_ids:
                 preview = ", ".join(map(str, reset_ids[:20]))
                 more = " …" if len(reset_ids) > 20 else ""
-                st.warning(t(f"texts.{st.session_state.language}.admin_content.edit_cert_data_section.reset_cert_number_warning",
-                             reset_ids=len(reset_ids), preview=preview, more=more))
+                st.warning(
+                    t(f"texts.{st.session_state.language}.admin_content.edit_cert_data_section.reset_cert_number_warning",
+                      reset_ids=len(reset_ids), preview=preview, more=more))
 
             st.success(f"{admin_cfg['edit_cert_data_section']['success']}")
             st.rerun()
