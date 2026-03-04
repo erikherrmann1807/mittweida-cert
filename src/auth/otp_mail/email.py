@@ -5,31 +5,6 @@ from src.auth.otp_mail.config import *
 from util import get_mail_context
 
 
-def build_message(to_email: str, code: str) -> EmailMessage:
-    plain = (
-        f"Hier ist dein Einmal-Code: {code}\n\n"
-        f"Er ist {CODE_TTL_SECONDS // 60} Minuten gültig. "
-        "Wenn du das nicht warst, ignoriere diese Mail."
-    )
-    html = f"""
-    <html><body style="font-family:Arial, sans-serif;">
-      <h2>Dein Anmeldecode</h2>
-      <p style="font-size:16px">Code:
-         <strong style="font-size:22px;letter-spacing:2px">{code}</strong></p>
-      <p>Gültig für {CODE_TTL_SECONDS // 60} Minuten.</p>
-      <hr/>
-      <p style="color:#666;font-size:12px">Falls du das nicht warst, ignoriere diese E-Mail.</p>
-    </body></html>
-    """
-    msg = EmailMessage()
-    msg["Subject"] = "Dein Anmeldecode"
-    msg["From"] = SMTP_FROM
-    msg["To"] = to_email
-    msg.set_content(plain)
-    msg.add_alternative(html, subtype="html")
-    return msg
-
-
 def build_admin_registration_message(to_email: str, email: str, name: str, affiliation: str):
     plain = (
         f"{name} beantragt einen Admin Zugriff\n\n"
@@ -77,6 +52,7 @@ def build_admin_confirmation_message(to_email):
     msg.add_alternative(html, subtype="html")
     return msg
 
+
 def build_admin_registration_request_confirmation(to_email: str, systemadmin_email: str):
     plain = (
         f"Vielen Dank für Ihre Anfrage des Adminzugriffs für den HSMW Zertifikatsservice\n\n"
@@ -101,12 +77,6 @@ def build_admin_registration_request_confirmation(to_email: str, systemadmin_ema
     msg.add_alternative(html, subtype="html")
     return msg
 
-
-def send_mail_code(to_email: str, code: str):
-    msg = build_message(to_email, code)
-    mail_setup(msg)
-
-
 def send_admin_registration_mail(to_email: str, email: str, name: str, affiliation: str):
     msg = build_admin_registration_message(to_email, email, name, affiliation)
     mail_setup(msg)
@@ -115,6 +85,7 @@ def send_admin_registration_mail(to_email: str, email: str, name: str, affiliati
 def send_admin_registration_request_confirmation(to_email: str, systemadmin_email: str):
     msg = build_admin_registration_request_confirmation(to_email, systemadmin_email)
     mail_setup(msg)
+
 
 def send_admin_confirmation_mail(to_email: str):
     msg = build_admin_confirmation_message(to_email)
