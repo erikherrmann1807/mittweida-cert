@@ -3,7 +3,7 @@ import time
 import streamlit as st
 
 from src.api.wrapper import request_otp, verify_otp
-from util import get_config, get_lang_options, Role, validate_email
+from util import get_config, get_lang_options, Role, validate_email, t
 
 config = get_config()
 
@@ -39,7 +39,7 @@ def code_section(email_req: str | None):
             try:
                 email = (st.session_state.login_mail or email_req or "").strip().lower()
                 if not email:
-                    st.error("E-Mail fehlt.")
+                    st.error(config['texts'][st.session_state.language]['login']['mail_missing'])
                     return
 
                 resp = verify_otp(email=email, role=st.session_state.role, otp=code_input)
@@ -75,7 +75,7 @@ def mail_section() -> str | None:
     email = email_req.strip().lower() if email_req else ""
 
     if not email:
-        st.info("Bitte E-Mail eingeben, um fortzufahren.")
+        st.info(cfg['mail_info'])
         return None
 
     is_valid = validate_email(email)
@@ -89,8 +89,6 @@ def mail_section() -> str | None:
         remaining = 0
 
     send_label = cfg['send_code_button']
-    if remaining > 0:
-        send_label = f"{cfg['send_code_button']} ({remaining}s)"
 
     col1, col2 = st.columns(2)
 
@@ -103,7 +101,7 @@ def mail_section() -> str | None:
 
     with col2:
         have_code_clicked = st.button(
-            "Ich habe bereits einen Code",
+            cfg['have_code_button'],
             use_container_width=True,
         )
 
@@ -112,26 +110,19 @@ def mail_section() -> str | None:
 
         if result["status"] == 200 and result.get("sent"):
             st.session_state.login_mail = email
-            st.session_state.success_message = "Code wurde gesendet und ist für 10min gültig."
             st.session_state.otp = True
+            st.success(t(f"texts.{st.session_state.language}.login.request_code", email=email, code_ttl=result.get("ttl")))
 
         elif result["status"] == 429:
             remaining = int(result.get("retry_after", 60))
-            st.warning(f"Bitte warten: {remaining}s (Code wurde bereits gesendet)")
+            st.warning(t(f"texts.{st.session_state.language}.login.invalid_code_and_attempts", remaining=remaining))
 
         else:
-            st.error("Unerwartete Antwort vom Server.")
+            st.error(cfg['request_error'])
 
     if have_code_clicked:
         st.session_state.login_mail = email
-        st.session_state.success_message = st.session_state.get(
-            "success_message", "Bitte gib deinen Code ein."
-        )
         st.session_state.otp = True
-
-    if st.session_state.otp:
-        if st.session_state.get("success_message"):
-            st.success(st.session_state.success_message)
 
     return email
 

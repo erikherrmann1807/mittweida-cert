@@ -2,9 +2,7 @@ import hashlib
 import json
 import os
 import re
-import secrets
 import ssl
-import string
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
@@ -12,15 +10,6 @@ from pathlib import Path
 import streamlit as st
 
 from src.api.wrapper import logout_api
-from src.auth.otp_mail.config import CODE_LEN
-
-
-def random_numeric_code(n=CODE_LEN) -> str:
-    return "".join(secrets.choice(string.digits) for _ in range(n))
-
-
-def hash_code(email: str, code: str) -> str:
-    return hashlib.sha256((email + ":" + code).encode("utf-8")).hexdigest()
 
 
 def get_placeholders(name: str, email: str, course_name: str, platform: str, created_at: str, cert_number: str,
@@ -106,7 +95,6 @@ def init_session_states():
     st.session_state.setdefault("login_attempts", 0)
     st.session_state.setdefault("code_last_sent_at", None)
     st.session_state.setdefault("otp", False)
-    st.session_state.setdefault("success_message", None)
     st.session_state.setdefault("language", "german")
     st.session_state.setdefault("language_set", False)
     st.session_state.setdefault("role", None)

@@ -7,7 +7,7 @@ from babel.dates import format_date
 
 from src.api.wrapper import set_alias_email, get_cert_template_path, get_certificates_for_user_email
 from src.generate_pdf import convert_odt_to_pdf
-from util import get_config, get_placeholders, parse_dt
+from util import get_config, get_placeholders, parse_dt, t
 
 config = get_config()
 
@@ -39,7 +39,6 @@ def display_certs(certs_per_row: int, rows: list[list[dict]]):
                         created_at = cert.get("created_at")
                         cert_number = cert.get("cert_number")
                         institution = cert.get("institution")
-                        template_path = cert.get("template_path")
                         logo_path = cert.get("logo_path")
 
                         dt = parse_dt(created_at)
@@ -102,15 +101,15 @@ def cert_filter_options() -> tuple[Any | None, Any | None, str | None]:
                                      'filter_placeholder'],
                                  key="search")
 
-    if search_query:
-        st.write(f"Suchergebnisse für '{search_query}':")
-
     year_column, platform_column = st.columns([1, 1])
     with year_column:
         selected_year = st.selectbox(filter_cfg['year_dropdown_label'],
                                      filter_cfg['year_dropdown_values'])
     with platform_column:
         selected_platform = st.selectbox(filter_cfg['platform_dropdown_label'], filter_cfg['platform_dropdown_values'])
+
+    if search_query:
+        st.write(t(f"texts.{st.session_state.language}.user_content.search_results", search_query=search_query))
     return search_query, selected_platform, selected_year
 
 
@@ -171,7 +170,7 @@ def download_dialog(name: str, email: str, course_name: str, platform: str, crea
             if st.download_button(
                     download_cfg['download_button'],
                     data=pdf,
-                    file_name=f"Zertifikat-{name}-{course_name}.pdf",
+                    file_name=t(f"texts.{st.session_state.language}.user_content.download_cert.file_name", name=name, course_name=course_name),
                     mime="application/pdf"
             ):
                 st.rerun()
