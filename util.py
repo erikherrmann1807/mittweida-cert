@@ -1,4 +1,3 @@
-import hashlib
 import json
 import os
 import re
@@ -10,6 +9,9 @@ from pathlib import Path
 import streamlit as st
 
 from src.api.wrapper import logout_api
+
+strings_path = Path(".streamlit/config.json")
+STRINGS = json.loads(strings_path.read_text(encoding="utf-8"))
 
 
 def get_placeholders(name: str, email: str, course_name: str, platform: str, created_at: str, cert_number: str,
@@ -46,10 +48,6 @@ def get_lang_options():
         "English": "en_US",
     }
     return lang_options
-
-
-strings_path = Path(".streamlit/config.json")
-STRINGS = json.loads(strings_path.read_text(encoding="utf-8"))
 
 
 def get_from_path(data: dict, path: str | list[str]):

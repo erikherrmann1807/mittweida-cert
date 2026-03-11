@@ -5,14 +5,6 @@ import requests
 from src.api.client import post, get
 
 
-def create_admin(name: str, email: str, affiliation: str):
-    return post("/admins/create", json={
-        "name": name,
-        "email": email,
-        "affiliation": affiliation,
-    })
-
-
 def import_csv_api(uploaded_file, institution, logo_path, template_type, template_path):
     if isinstance(uploaded_file, list):
         uploaded_file = uploaded_file[0]
@@ -93,4 +85,10 @@ def logout_api():
 
 
 def check_existing_user(email: str, role: str):
-    return post(f"/users/exists?email={email}&role={role}")
+    return get("/users/exists", params={"email": email, "role": role})
+
+
+def send_admin_registration(to_email: str, email: str, name: str, affiliation: str, systemadmin_email: str):
+    return post("/admins/register",
+                json={"to_email": to_email, "email": email, "name": name, "affiliation": affiliation,
+                      "systemadmin_email": systemadmin_email})

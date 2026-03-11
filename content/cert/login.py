@@ -111,7 +111,8 @@ def mail_section() -> str | None:
         if result["status"] == 200 and result.get("sent"):
             st.session_state.login_mail = email
             st.session_state.otp = True
-            st.success(t(f"texts.{st.session_state.language}.login.request_code", email=email, code_ttl=result.get("ttl")))
+            st.success(
+                t(f"texts.{st.session_state.language}.login.request_code", email=email, code_ttl=result.get("ttl")))
 
         elif result["status"] == 429:
             remaining = int(result.get("retry_after", 60))
@@ -125,4 +126,3 @@ def mail_section() -> str | None:
         st.session_state.otp = True
 
     return email
-

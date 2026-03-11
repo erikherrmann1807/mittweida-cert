@@ -170,7 +170,8 @@ def download_dialog(name: str, email: str, course_name: str, platform: str, crea
             if st.download_button(
                     download_cfg['download_button'],
                     data=pdf,
-                    file_name=t(f"texts.{st.session_state.language}.user_content.download_cert.file_name", name=name, course_name=course_name),
+                    file_name=t(f"texts.{st.session_state.language}.user_content.download_cert.file_name", name=name,
+                                course_name=course_name),
                     mime="application/pdf"
             ):
                 st.rerun()

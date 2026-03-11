@@ -1,7 +1,6 @@
 import streamlit as st
 
-from src.api.wrapper import check_existing_user
-from src.auth.otp_mail.email import send_admin_registration_mail, send_admin_registration_request_confirmation
+from src.api.wrapper import check_existing_user, send_admin_registration
 from util import get_config, validate_email
 
 config = get_config()
@@ -22,11 +21,15 @@ def admin_registration():
             elif not validate_email(email=email_query):
                 st.error(admin_registration_cfg['not_email'])
             else:
-                send_admin_registration_mail(admin_registration_cfg['system_admin_email'], email=email_query,
-                                             name=name_query, affiliation=affiliation_query)
-                send_admin_registration_request_confirmation(to_email=email_query,
-                                                             systemadmin_email=admin_registration_cfg[
-                                                                 'system_admin_email'], )
-                st.success(admin_registration_cfg['success_registration'])
+                try:
+                    result = send_admin_registration(to_email=admin_registration_cfg['system_admin_email'],
+                                                     email=email_query,
+                                                     name=name_query, affiliation=affiliation_query,
+                                                     systemadmin_email=admin_registration_cfg[
+                                                         'system_admin_email'])
+                    if result == "sent successfully":
+                        st.success(admin_registration_cfg['success_registration'])
+                except Exception as e:
+                    st.error(str(e) + result)
 
     st.stop()
