@@ -88,6 +88,17 @@ def check_existing_user(email: str, role: str):
     return get("/users/exists", params={"email": email, "role": role})
 
 
+def check_admin_status(email: str, role: str):
+    return get("/admins/status", params={"email": email, "role": role})
+
+def create_admin(name: str, email: str, affiliation: str):
+    return post("/admins/create", json={
+        "name": name,
+        "email": email,
+        "affiliation": affiliation
+    })
+
+
 def send_admin_registration(to_email: str, email: str, name: str, affiliation: str, systemadmin_email: str):
     return post("/admins/register",
                 json={"to_email": to_email, "email": email, "name": name, "affiliation": affiliation,
