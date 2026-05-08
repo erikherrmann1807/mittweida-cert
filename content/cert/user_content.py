@@ -5,9 +5,9 @@ import streamlit as st
 from PIL import Image
 from babel.dates import format_date
 
-from src.api.wrapper import set_alias_email, get_cert_template_path, get_certificates_for_user_email
-from src.generate_pdf import convert_odt_to_pdf
-from util import get_config, get_placeholders, parse_dt, t
+from src.api.wrapper import set_alias_email, get_certificates_for_user_email, \
+    generate_certificate
+from util import get_config, parse_dt, t
 
 config = get_config()
 
@@ -53,13 +53,8 @@ def display_certs(certs_per_row: int, rows: list[list[dict]]):
                         if st.button(cert_cfg['generate_button'], key=f"download_{cert_id}", use_container_width=True):
                             download_dialog(
                                 name=name,
-                                email=email,
                                 course_name=course_name,
-                                platform=platform,
-                                created_at=date,
                                 cert_number=cert_number,
-                                institution=institution,
-                                logo_path=logo_path,
                             )
 
 
@@ -146,25 +141,21 @@ def header():
     st.markdown(config['texts'][st.session_state.language]['user_content']['header'], unsafe_allow_html=True)
 
 
-def download_dialog(name: str, email: str, course_name: str, platform: str, created_at: str,
-                    cert_number: str, institution: str, logo_path: str):
+def download_dialog(name: str, course_name: str, cert_number: str):
     lang = st.session_state.get("language")
     download_cfg = config['texts'][lang]['user_content']['download_cert']
 
     @st.dialog(download_cfg['dialog_header'])
     def _dialog():
         with st.spinner(download_cfg['generating_cert']):
-            placeholder = get_placeholders(
-                name, email, course_name, platform, created_at, cert_number, institution
-            )
 
-            template_file = get_cert_template_path(cert_number)
+            # pdf = convert_odt_to_pdf(
+            #     template_path=template_file,
+            #     placeholders=placeholder,
+            #     logo_path=logo_path,
+            # )
 
-            pdf = convert_odt_to_pdf(
-                template_path=template_file,
-                placeholders=placeholder,
-                logo_path=logo_path,
-            )
+            pdf = generate_certificate(cert_number)
 
             st.write(download_cfg['generating_success'])
             if st.download_button(
