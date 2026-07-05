@@ -5,41 +5,64 @@ import requests
 from src.api.client import post, get
 
 
-def import_csv_api(uploaded_file, institution, logo_path, template_type, template_path):
+def import_csv_api(uploaded_file, institution, logo_file, template_type, template_file):
     if isinstance(uploaded_file, list):
         uploaded_file = uploaded_file[0]
+    if isinstance(template_file, list):
+        template_file = template_file[0]
+    if isinstance(logo_file, list):
+        logo_file = logo_file[0]
 
     files = {
-        "file": (uploaded_file.name, uploaded_file.getvalue(), "text/csv")
-    }
-    data = {
-        "institution": institution,
-        "logo_path": logo_path or "",
-        "template": template_type or "",
-        "template_path": template_path or "",
+        "file": (
+            uploaded_file.name,
+            uploaded_file.getvalue(),
+            "text/csv"
+        ),
+        "template_file": (
+            template_file.name,
+            template_file.getvalue(),
+            "application/vnd.oasis.opendocument.text"
+        )
     }
 
-    return post("/certificates/import-csv", files=files, data=data)
+    if logo_file is not None:
+        files["logo_file"] = (
+            logo_file.name,
+            logo_file.getvalue(),
+            "image/png"
+        )
+    data = {
+        "institution": institution,
+        "template": template_type or "",
+    }
+
+    resp = post("/certificates/import-csv", files=files, data=data)
+
+    return resp.json()
+
+
+def generate_certificate(cert_number: str):
+    resp = get("/certificates/generate-pdf", params={"cert_number": cert_number})
+    return resp.content
 
 
 def set_alias_email(email: str, alias: str):
-    return post("/users/alias", json={
+    resp = post("/users/alias", json={
         "main_email": email,
         "alias_email": alias
     })
-
-
-def get_cert_template_path(cert_number: str) -> str:
-    resp = get("/certificates/template-path", params={"cert_number": cert_number})
-    return resp["template_path"]
+    return resp.json()
 
 
 def get_certificates_for_user_email(email: str):
-    return get("/certificates/by-user", params={"email": email})
+    resp = get("/certificates/by-user", params={"email": email})
+    return resp.json()
 
 
 def get_certificates_for_admin_email():
-    return get("/certificates/by-admin")
+    resp = get("/certificates/by-admin")
+    return resp.json()
 
 
 def apply_certificate_editor_changes(
@@ -50,21 +73,23 @@ def apply_certificate_editor_changes(
         "edited": edited_records,
         "original": original_records,
     })
-    return resp.get("reset_ids", [])
+    return resp.json().get("reset_ids", [])
 
 
 def get_admin_id(email: str):
-    return get("/admins/id", params={"email": email})
+    resp = get("/admins/id", params={"email": email})
+    return resp.json()
 
 
 def get_certificate_by_cert_number(cert_number: str):
-    return get(f"/certificates/verify?cert_number={cert_number}")
+    resp = get(f"/certificates/verify?cert_number={cert_number}")
+    return resp.json()
 
 
 def request_otp(email: str, role: str):
     try:
         resp = post("/auth/request-otp", json={"email": email, "role": role})
-        return {"status": 200, **resp}
+        return {"status": 200, **resp.json()}
     except requests.HTTPError as e:
         r = e.response
         if r is not None and r.status_code == 429:
@@ -77,29 +102,36 @@ def request_otp(email: str, role: str):
 
 
 def verify_otp(email: str, role: str, otp: str):
-    return post("/auth/verify-otp", json={"email": email, "role": role, "otp": otp})
+    resp = post("/auth/verify-otp", json={"email": email, "role": role, "otp": otp})
+    return resp.json()
 
 
 def logout_api():
-    return post("/auth/logout")
+    resp = post("/auth/logout")
+    return resp.json()
 
 
 def check_existing_user(email: str, role: str):
-    return get("/users/exists", params={"email": email, "role": role})
+    resp = get("/users/exists", params={"email": email, "role": role})
+    return resp.json()
 
 
 def check_admin_status(email: str, role: str):
-    return get("/admins/status", params={"email": email, "role": role})
+    resp = get("/admins/status", params={"email": email, "role": role})
+    return resp.json()
+
 
 def create_admin(name: str, email: str, affiliation: str):
-    return post("/admins/create", json={
+    resp = post("/admins/create", json={
         "name": name,
         "email": email,
         "affiliation": affiliation
     })
+    return resp.json()
 
 
 def send_admin_registration(to_email: str, email: str, name: str, affiliation: str, systemadmin_email: str):
-    return post("/admins/register",
+    resp = post("/admins/register",
                 json={"to_email": to_email, "email": email, "name": name, "affiliation": affiliation,
                       "systemadmin_email": systemadmin_email})
+    return resp.json()

@@ -1,4 +1,5 @@
 import os
+from io import BytesIO
 
 import numpy as np
 import requests
@@ -7,7 +8,7 @@ from pandas import DataFrame
 
 from src.api.wrapper import import_csv_api, get_certificates_for_admin_email, apply_certificate_editor_changes, \
     get_admin_id
-from util import get_config, get_logo_path, t
+from util import get_config, t
 
 config = get_config()
 
@@ -15,12 +16,8 @@ config = get_config()
 def admin_content():
     admin_cfg = config['texts'][st.session_state.language]['admin_content']
     st.markdown(admin_cfg['header'], unsafe_allow_html=True)
-    admin_id = get_admin_id(st.session_state.auth_email)
 
-    template_rel_path = os.path.join("admins", f"{admin_id}", "template.odt")
-    template_abs_path = os.path.abspath(template_rel_path)
-
-    with st.container(border=True):
+    with (st.container(border=True)):
         st.markdown(admin_cfg['upload_certs'])
         uploaded_file = st.file_uploader(admin_cfg['upload_csv'], type=["csv"],
                                          accept_multiple_files=True)
@@ -36,12 +33,23 @@ def admin_content():
 
         uploaded_logo = None
         if template_choice == admin_cfg['template_section']['radio_button'][0]:
-            uploaded_logo = st.file_uploader(admin_cfg['upload_logo'], type=["png"], )
+            uploaded_logo = st.file_uploader(admin_cfg['upload_logo'], type=["png"])
 
+        if uploaded_logo is None:
+            logo_path = os.path.join("assets/images", "logo.png")
+            with open(logo_path, "rb") as f:
+                uploaded_logo = BytesIO(f.read())
+            uploaded_logo.name = "logo.png"
+
+
+        template_file = None
         template_type = "default"
         template_path = os.path.join("data", "Cert.odt")
 
-        custom_template_file = None
+        with open(template_path, "rb") as f:
+            template_file = BytesIO(f.read())
+        template_file.name = "Cert.odt"
+
         if template_choice == admin_cfg['template_section']['radio_button'][1]:
             template_type = "custom"
 
@@ -50,36 +58,29 @@ def admin_content():
 
             confirmed = st.checkbox(f"{admin_cfg['template_section']['confirm_instructions']}")
             if confirmed:
-                custom_template_file = st.file_uploader(f"{admin_cfg['template_section']['upload_hint']}", type=["odt"])
+                template_file = st.file_uploader(f"{admin_cfg['template_section']['upload_hint']}", type=["odt"])
             else:
                 st.warning(f"{admin_cfg['template_section']['instruction_warning']}")
 
-            template_path = template_rel_path
 
         if st.button(label=admin_cfg['confirm_upload_button']):
             if template_type == "custom":
-                if custom_template_file is None:
+                if template_file is None:
                     st.warning(f"{admin_cfg['template_section']['confirm_upload_warning']}")
                     return
 
-                os.makedirs(os.path.dirname(template_abs_path), exist_ok=True)
-                with open(template_abs_path, "wb") as f:
-                    f.write(custom_template_file.getbuffer())
+                #os.makedirs(os.path.dirname(template_abs_path), exist_ok=True)
+                #with open(template_abs_path, "wb") as f:
+                    #f.write(custom_template_file.getbuffer())
 
-            logo_path = None
-            if uploaded_logo is not None:
-                file_name = uploaded_logo.name
-                logo_path = os.path.join(get_logo_path(), file_name)
-                with open(logo_path, "wb") as file:
-                    file.write(uploaded_logo.getbuffer())
             if institution and uploaded_file:
                 try:
                     resp = import_csv_api(
                         uploaded_file=uploaded_file,
                         institution=institution,
-                        logo_path=logo_path,
+                        logo_file=uploaded_logo,
                         template_type=template_type,
-                        template_path=template_path,
+                        template_file=template_file,
                     )
                     st.success(admin_cfg['upload_success'])
                     st.json(resp)
